@@ -6,7 +6,7 @@ Updated: 2026-11-03
 
 | Check | Result | Scope |
 |---|---|---|
-| `npm test` | PASS: 161 passed, 0 failed (2026-11-03) | Electron Node test runner; provider/wallet/network behavior is mocked |
+| `npm test` | PASS: 164 passed, 0 failed (2026-11-03) | Electron Node test runner; provider/wallet/network behavior is mocked |
 | JavaScript syntax | PASS: 62 files (2026-11-03) | Main, preload, renderer, source, web client and tests |
 | Electron smoke at 390px | PASS, exit 0, `failed:[]` (2026-11-03) | Eight views, Analytics APIs, archived listing, renderer isolation, review/evidence, and safety gates |
 | Electron smoke at 1180px | PASS, exit 0, `failed:[]` (2026-11-03) | Same checks at desktop width |

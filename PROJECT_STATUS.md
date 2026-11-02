@@ -48,7 +48,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 
 See [TEST_REPORT.md](./TEST_REPORT.md) for exact commands and results. The latest recorded checks are:
 
-- `npm test`: 161 passed, 0 failed, including DNS policy/pinning, redirect validation, backup round-trip/invalid-input, and offline web UI coverage.
+- `npm test`: 164 passed, 0 failed, including DNS policy/pinning, redirect validation, backup round-trip/invalid-input, offline web UI, and secure-origin PWA coverage.
 - JavaScript syntax checks: all 62 project JavaScript files passed.
 - Electron smoke checks at 390px and 1180px: exited 0 with `failed:[]`.
 - Direct local web preview: synthetic bundle import, campaign search, and evidence/history filtering passed.
