@@ -676,6 +676,16 @@ app.whenReady().then(() => {
         document.getElementById('campaignSearch').dispatchEvent(new Event('input'));
         for(let i=0;i<40&&document.querySelector('#campaignListStatus')?.textContent!=='Showing 1 of 1 campaign record.';i++)await new Promise(resolve=>setTimeout(resolve,25));
         o.campaignListAnnounced=document.querySelector('#campaignListStatus')?.getAttribute('role')==='status'&&document.querySelector('#campaignListStatus').getAttribute('aria-live')==='polite'&&document.querySelector('#campaignListStatus').textContent==='Showing 1 of 1 campaign record.';
+        const campaignResults=document.querySelector('#list');
+        o.campaignResultsList=campaignResults?.getAttribute('role')==='list'&&campaignResults.getAttribute('aria-label')==='Campaign search results'&&campaignResults.querySelectorAll(':scope > [role="listitem"]').length===1;
+        const search=document.getElementById('campaignSearch');
+        search.value='no matching campaign in smoke';
+        search.dispatchEvent(new Event('input'));
+        for(let i=0;i<40&&document.querySelector('#campaignListStatus')?.textContent!=='Showing 0 of 1 campaign record. No records match the selected filters.';i++)await new Promise(resolve=>setTimeout(resolve,25));
+        o.campaignEmptyListItem=campaignResults.querySelector(':scope > [role="listitem"]')?.textContent==='No campaigns match these filters.';
+        o.campaignEmptyAnnounced=document.querySelector('#campaignListStatus')?.textContent==='Showing 0 of 1 campaign record. No records match the selected filters.';
+        search.value='';
+        search.dispatchEvent(new Event('input'));
         for(let i=0;i<40&&document.querySelectorAll('#list .snapshot-diff label').length<2;i++)await new Promise(resolve=>setTimeout(resolve,25));
         const revisionLabels=[...document.querySelectorAll('#list .snapshot-diff label')];
         o.snapshotRevisionLabels=revisionLabels.length===2&&revisionLabels.every(label=>Boolean(label.querySelector('select')&&label.querySelector('span').textContent.trim()));
@@ -724,7 +734,7 @@ app.whenReady().then(() => {
       return o})()`);
     const required = ['pg','node','offlineWebBundleApi','styled','viewCount','navigationTargets','noHorizontalOverflow','previewNoticeHidden','appErrorHidden',
       'marketsNavigation','marketsHeadingFocus','activeNavigation','analyticsNavigation','analyticsFlags','analyticsActivity','overviewNavigation','add','dup','review','archived','sourceUnverified','snapshot','sourceAttested','preflightSnapshot','badDomain','domainAdded','domainRemoved',
-      'campaignListAnnounced','snapshotRevisionLabels','reviewControlsLabeled','snapshotComparisonAnnounced','diffRowsAccessible','badfeed','badmanifest','ton','refresh','wc','badpid','wcrefresh','wcbad','minRewardDefault','minRewardSaved','feedAdded','feedRemoved',
+      'campaignListAnnounced','campaignResultsList','campaignEmptyListItem','campaignEmptyAnnounced','snapshotRevisionLabels','reviewControlsLabeled','snapshotComparisonAnnounced','diffRowsAccessible','badfeed','badmanifest','ton','refresh','wc','badpid','wcrefresh','wcbad','minRewardDefault','minRewardSaved','feedAdded','feedRemoved',
       'scheduleDisabled','notificationMessage','notificationDismissed','signApi','inline'];
     const checks = { pg: r.pg === 'object', node: r.node === 'undefinedundefined', offlineWebBundleApi: r.offlineWebBundleApi, styled: r.styled,
       viewCount: r.viewCount === 8, navigationTargets: r.navigationTargets, noHorizontalOverflow: r.noHorizontalOverflow,
@@ -737,6 +747,9 @@ app.whenReady().then(() => {
       snapshotRevisionLabels: r.snapshotRevisionLabels,
       reviewControlsLabeled: r.reviewControlsLabeled,
       campaignListAnnounced: r.campaignListAnnounced,
+      campaignResultsList: r.campaignResultsList,
+      campaignEmptyListItem: r.campaignEmptyListItem,
+      campaignEmptyAnnounced: r.campaignEmptyAnnounced,
       snapshotComparisonAnnounced: r.snapshotComparisonAnnounced,
       diffRowsAccessible: r.diffRowsAccessible,
       preflightSnapshot: r.preflightSnapshot,
