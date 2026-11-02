@@ -26,6 +26,16 @@
     container.replaceChildren(text('p', message, 'empty'));
   }
 
+  function tableRegion(table, label) {
+    const region = document.createElement('div');
+    region.className = 'table-scroll';
+    region.setAttribute('role', 'region');
+    region.setAttribute('aria-label', `${label}; scroll horizontally to view all columns`);
+    region.tabIndex = 0;
+    region.append(table);
+    return region;
+  }
+
   function clear() {
     bundle = null;
     picker.value = '';
@@ -58,8 +68,13 @@
       return;
     }
     const table = document.createElement('table');
+    table.setAttribute('aria-label', 'Campaign search results');
     const head = document.createElement('tr');
-    ['Campaign', 'Status', 'Network', 'Reward', 'Archived', 'Reasons'].forEach(label => head.append(text('th', label)));
+    ['Campaign', 'Status', 'Network', 'Reward', 'Archived', 'Reasons'].forEach(label => {
+      const heading = text('th', label);
+      heading.scope = 'col';
+      head.append(heading);
+    });
     table.append(head);
     visible.forEach(item => {
       const row = document.createElement('tr');
@@ -69,21 +84,26 @@
       ].forEach(value => row.append(text('td', value)));
       table.append(row);
     });
-    campaigns.replaceChildren(table);
+    campaigns.replaceChildren(tableRegion(table, 'Campaign search results'));
   }
 
-  function renderList(container, entries, columns, emptyMessage) {
+  function renderList(container, entries, columns, emptyMessage, label) {
     if (!entries.length) { empty(container, emptyMessage); return; }
     const table = document.createElement('table');
+    table.setAttribute('aria-label', label);
     const head = document.createElement('tr');
-    columns.forEach(([, label]) => head.append(text('th', label)));
+    columns.forEach(([, label]) => {
+      const heading = text('th', label);
+      heading.scope = 'col';
+      head.append(heading);
+    });
     table.append(head);
     entries.forEach(entry => {
       const row = document.createElement('tr');
       columns.forEach(([key]) => row.append(text('td', entry[key])));
       table.append(row);
     });
-    container.replaceChildren(table);
+    container.replaceChildren(tableRegion(table, label));
   }
 
   function renderRelatedRecords() {
@@ -99,10 +119,10 @@
       : `Showing ${visibleEvidence.length} evidence revision(s) and ${visibleHistory.length} status event(s) across all campaigns.`;
     renderList(evidence, visibleEvidence, [
       ['campaignId', 'Campaign ID'], ['url', 'Evidence URL'], ['fetchedAt', 'Captured'], ['contentHash', 'SHA-256'], ['note', 'Provenance note'], ['content', 'Text snapshot']
-    ], 'No evidence revisions match this campaign.');
+    ], 'No evidence revisions match this campaign.', 'Evidence revisions');
     renderList(history, visibleHistory, [
       ['campaignId', 'Campaign ID'], ['fromStatus', 'From'], ['toStatus', 'To'], ['reason', 'Reason'], ['occurredAt', 'When']
-    ], 'No status history matches this campaign.');
+    ], 'No status history matches this campaign.', 'Status history');
   }
 
   function show(data) {
