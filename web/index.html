@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10243a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PromoGuard">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>PromoGuard — Offline web preview</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -19,6 +24,7 @@
       <label for="bundleFile">PromoGuard web bundle (JSON)</label>
       <input id="bundleFile" type="file" accept="application/json,.json">
       <p id="importStatus" role="status" aria-live="polite"></p>
+      <p id="offlineStatus" class="empty" role="status" aria-live="polite">Installable offline mode requires HTTPS or localhost. Direct file import remains available.</p>
       <div id="summary"></div>
       <button id="clearBundle" type="button">Clear local view</button>
     </section>

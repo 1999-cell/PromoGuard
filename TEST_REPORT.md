@@ -11,6 +11,7 @@ Updated: 2026-11-03
 | Electron smoke at 390px | PASS, exit 0, `failed:[]` (2026-11-03) | Eight views, Analytics APIs, archived listing, renderer isolation, review/evidence, and safety gates |
 | Electron smoke at 1180px | PASS, exit 0, `failed:[]` (2026-11-03) | Same checks at desktop width |
 | Offline web preview | PASS (2026-11-03) | Direct local preview imported a synthetic bundle; search and campaign evidence/history filtering worked |
+| Offline PWA shell | PASS (2026-11-03) | HTTPS/localhost registration guards, secure-origin-only service worker handling, static-shell cache allow-list, and PWA manifest/icons covered by focused tests; no mobile-device install acceptance |
 | Windows NSIS build | PASS (2026-11-03) | Current source packaged to a temporary directory outside the repository; temporary output removed after verification |
 | Dependency audit | Previously recorded PASS: 0 reported (2026-10-26) | `npm audit` and `npm audit --omit=dev`; not rerun in this audit |
 
@@ -27,6 +28,7 @@ Run with `npm test` (`node test/run.js`), which launches the suite under Electro
 - User-pasted terms snapshot validation, maximum size, safe HTTPS URL checks, immutable SHA-256 revisions, duplicate handling, and matching-snapshot review gating.
 - Backup export/import round-trip of archived campaigns, evidence contents, status history and settings; idempotent imports, schedule-consent reset, pre-write validation, and evidence-hash integrity.
 - Offline web bundle validation and UI behaviors, including campaign search, evidence/history filtering, invalid import handling, and clearing the local view.
+- Offline PWA registration is limited to secure HTTPS or localhost origins; service-worker tests verify that only same-origin allow-listed static GET assets are cached/served, and the manifest/icon files exist. Imported bundle data is never included in the app-shell cache.
 - Advisory AI prompt/data handling and explicit MCP tool consent/dispatch.
 - Encrypted storage, including asynchronous OS-storage operations and errors for unreadable encrypted state.
 - Closed stdout/stderr pipes (`EPIPE`) do not crash the process; other stream errors are still raised.
@@ -70,7 +72,7 @@ The stale installer packages in the repository were removed; locked unpacked app
 
 ## Browser preview and the Electron message
 
-Opening `renderer/index.html` directly is a static browser preview. It intentionally has no Electron preload bridge, database, wallet, feed, or AI access. The standalone `web/index.html` is a source-only local companion for importing the read-only export bundle; it is not included in the Windows installer and has no account, sync, or network API.
+Opening `renderer/index.html` directly is a static browser preview. It intentionally has no Electron preload bridge, database, wallet, feed, or AI access. The standalone `web/index.html` is a source-only local companion for importing the read-only export bundle; it is not included in the Windows installer and has no account, sync, or network API. Its PWA install/offline-cache mode requires HTTPS or localhost; `file://` remains usable for direct bundle imports but cannot install or use the service worker. Mobile browser installation and offline acceptance have not been tested on physical devices.
 
 For the full app, double-click `Start PromoGuard.bat` or run `npm start` from the project folder. Do not use the HTML preview as a substitute.
 

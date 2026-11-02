@@ -23,13 +23,16 @@ class Element {
 }
 
 test('campaign search and filter scope local records and invalid bundles preserve the current view', () => {
-  const ids = ['bundleFile', 'importStatus', 'summary', 'campaigns', 'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus', 'evidence', 'history', 'clearBundle'];
+  const ids = ['bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns', 'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus', 'evidence', 'history', 'clearBundle'];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const document = {
     getElementById: id => elements[id],
     createElement: tag => new Element(tag)
   };
   const window = {
+    location: { protocol: 'file:', hostname: '' },
+    isSecureContext: false,
+    navigator: {},
     PromoGuardBundle: {
       parseFile(file, callback) {
         callback(file.error || null, file.data || null);
@@ -38,6 +41,7 @@ test('campaign search and filter scope local records and invalid bundles preserv
   };
   const script = fs.readFileSync(path.join(__dirname, '..', 'web', 'app.js'), 'utf8');
   vm.runInNewContext(script, { document, window });
+  assert.match(elements.offlineStatus.textContent, /requires HTTPS or localhost/);
 
   const campaign = {
     id: 1,

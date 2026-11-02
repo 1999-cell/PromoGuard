@@ -24,7 +24,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 | Predictions (Paper) | Inactive placeholder; no live odds, money, prizes, points or payouts |
 | Windows packaging | NSIS build configured and verified in an alternate output directory; unsigned and not installed on a clean profile |
 | Backup/restore | Implemented: JSON export/import includes archived campaigns, evidence revisions, status history, and validated app settings; scheduled-fetch consent is reset |
-| Offline web companion | Implemented as a source-only local read-only bundle viewer with campaign search and per-campaign evidence/history filtering; not included in the Windows installer; no login, sync, or network API |
+| Offline web companion | Implemented as a source-only local read-only bundle viewer with campaign search, per-campaign evidence/history filtering, and an HTTPS/localhost-only installable PWA shell; not included in the Windows installer; no login, sync, or network API |
 
 ## Fixes completed in this audit
 

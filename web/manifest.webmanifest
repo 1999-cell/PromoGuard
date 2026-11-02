@@ -1,0 +1,26 @@
+{
+  "id": "./index.html",
+  "name": "PromoGuard Offline Preview",
+  "short_name": "PromoGuard",
+  "description": "A local, read-only viewer for PromoGuard campaign research bundles.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f6f8",
+  "theme_color": "#10243a",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

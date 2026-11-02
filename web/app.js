@@ -3,6 +3,7 @@
 (() => {
   const picker = document.getElementById('bundleFile');
   const status = document.getElementById('importStatus');
+  const offlineStatus = document.getElementById('offlineStatus');
   const summary = document.getElementById('summary');
   const campaigns = document.getElementById('campaigns');
   const campaignSearch = document.getElementById('campaignSearch');
@@ -128,6 +129,29 @@
     clearButton.disabled = false;
   }
 
+  function registerOfflineShell() {
+    const location = window.location;
+    const serviceWorker = window.navigator && window.navigator.serviceWorker;
+    const localHttpOrigin = location && location.protocol === 'http:'
+      && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname.toLowerCase());
+    const secureOrigin = location && window.isSecureContext
+      && (location.protocol === 'https:' || localHttpOrigin);
+
+    if (!secureOrigin || !serviceWorker) {
+      offlineStatus.textContent = 'Installable offline mode requires HTTPS or localhost. Direct file import remains available.';
+      return;
+    }
+
+    offlineStatus.textContent = 'Preparing offline app support…';
+    serviceWorker.register('./service-worker.js', { scope: './' })
+      .then(() => {
+        offlineStatus.textContent = 'Offline app support is ready. Use your browser menu to install; select the exported bundle each time you open it.';
+      })
+      .catch(error => {
+        offlineStatus.textContent = `Offline app support could not be enabled: ${error.message}. Bundle import still works.`;
+      });
+  }
+
   picker.addEventListener('change', () => {
     const file = picker.files && picker.files[0];
     if (!file) return;
@@ -147,4 +171,5 @@
   campaignFilter.addEventListener('change', renderRelatedRecords);
   clearButton.addEventListener('click', clear);
   clear();
+  registerOfflineShell();
 })();
