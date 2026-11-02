@@ -647,14 +647,23 @@ app.whenReady().then(() => {
       o.appErrorHidden=document.querySelector('#appError').hidden;
       document.querySelector('[data-view="markets"]').click();
       o.marketsNavigation=!document.querySelector('#view-markets').hidden&&document.querySelector('#pageTitle').textContent==='Markets';
+      o.marketsHeadingFocus=document.activeElement===document.querySelector('#view-markets h1')&&document.querySelector('#view-markets h1').tabIndex===-1;
+      o.activeNavigation=document.querySelector('[data-view="markets"]').getAttribute('aria-current')==='page';
       document.querySelector('[data-view="analytics"]').click();
       o.analyticsNavigation=!document.querySelector('#view-analytics').hidden&&document.querySelector('#pageTitle').textContent==='Analytics';
       try{o.analyticsFlags=Object.keys(await pg.analyticsFlags()).length===10;o.analyticsActivity=typeof await pg.analyticsActivity()==='object'}catch(e){o.analytics='ERR '+e.message}
       document.querySelector('[data-view="overview"]').click();
       o.overviewNavigation=!document.querySelector('#view-overview').hidden&&document.querySelector('#view-markets').hidden;
       if(getComputedStyle(document.querySelector('#navToggle')).display!=='none'){
-        document.querySelector('#navToggle').click();o.mobileMenuExpanded=document.querySelector('#navToggle').getAttribute('aria-expanded')==='true';
-        document.querySelector('[data-view="wallets"]').click();o.mobileMenuCloses=document.querySelector('#navToggle').getAttribute('aria-expanded')==='false'&&document.querySelector('#mobileBackdrop').hidden
+        const toggle=document.querySelector('#navToggle');
+        toggle.click();o.mobileMenuExpanded=toggle.getAttribute('aria-expanded')==='true'&&toggle.getAttribute('aria-label')==='Close navigation';
+        o.mobileMenuFocus=document.activeElement===document.querySelector('.primary-nav [data-view]');
+        document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+        o.mobileEscapeCloses=toggle.getAttribute('aria-expanded')==='false'&&toggle.getAttribute('aria-label')==='Open navigation'&&document.activeElement===toggle;
+        toggle.click();
+        document.querySelector('[data-view="wallets"]').click();
+        o.mobileMenuCloses=toggle.getAttribute('aria-expanded')==='false'&&document.querySelector('#mobileBackdrop').hidden;
+        o.mobileViewFocus=document.activeElement===document.querySelector('#view-wallets h1')
       }
       try{const a=await pg.addCampaign({name:'t',sourceUrl:'https://ton.org/a'});o.add=a.status;o.dup=(await pg.addCampaign({name:'t',sourceUrl:'https://ton.org/a/?utm_source=x'})).duplicate;
         await pg.reviewStart(a.id);o.review=(await pg.listCampaigns())[0].status;
@@ -663,6 +672,24 @@ app.whenReady().then(() => {
         let proof={evidenceUrl:'https://ton.org/terms',confirmFree:true,rewardAmount:1,tokenId:'ton:native'};
         o.sourceUnverified=(await pg.reviewEvidence(a.id,proof)).status;
         o.snapshot=(await pg.saveCampaignTermsSnapshot(a.id,'https://ton.org/terms','No payment is required.')).contentHash.length===64;
+        document.querySelector('[data-view="promoguard"]').click();
+        document.getElementById('campaignSearch').dispatchEvent(new Event('input'));
+        for(let i=0;i<40&&document.querySelector('#campaignListStatus')?.textContent!=='Showing 1 of 1 campaign record.';i++)await new Promise(resolve=>setTimeout(resolve,25));
+        o.campaignListAnnounced=document.querySelector('#campaignListStatus')?.getAttribute('role')==='status'&&document.querySelector('#campaignListStatus').getAttribute('aria-live')==='polite'&&document.querySelector('#campaignListStatus').textContent==='Showing 1 of 1 campaign record.';
+        for(let i=0;i<40&&document.querySelectorAll('#list .snapshot-diff label').length<2;i++)await new Promise(resolve=>setTimeout(resolve,25));
+        const revisionLabels=[...document.querySelectorAll('#list .snapshot-diff label')];
+        o.snapshotRevisionLabels=revisionLabels.length===2&&revisionLabels.every(label=>Boolean(label.querySelector('select')&&label.querySelector('span').textContent.trim()));
+        const reviewControls=[...document.querySelectorAll('#list .rev input,#list .rev textarea,#list .rev select')];
+        o.reviewControlsLabeled=reviewControls.length===8&&reviewControls.every(control=>Boolean(control.closest('label')||control.labels?.length||control.getAttribute('aria-label')));
+        await pg.saveCampaignTermsSnapshot(a.id,'https://ton.org/terms','No payment is required. Terms updated for smoke test.');
+        document.getElementById('campaignSearch').dispatchEvent(new Event('input'));
+        for(let i=0;i<40&&document.querySelectorAll('#list .snapshot-diff select option').length<4;i++)await new Promise(resolve=>setTimeout(resolve,25));
+        const comparison=document.querySelector('#list .diff-result');
+        o.snapshotComparisonAnnounced=Boolean(comparison&&comparison.getAttribute('role')==='status'&&comparison.getAttribute('aria-live')==='polite'&&comparison.getAttribute('aria-atomic')==='true');
+        document.querySelector('#list .snapshot-diff button').click();
+        for(let i=0;i<40&&!document.querySelector('#list .diff-table [role="listitem"]');i++)await new Promise(resolve=>setTimeout(resolve,25));
+        const diffRows=[...document.querySelectorAll('#list .diff-table [role="listitem"]')];
+        o.diffRowsAccessible=diffRows.length>0&&diffRows.some(row=>row.getAttribute('aria-label')?.startsWith('Added line:'))&&diffRows.every(row=>row.querySelector('.diff-marker')?.getAttribute('aria-hidden')==='true');
         proof.confirmOfficialSource=true;o.sourceAttested=(await pg.reviewEvidence(a.id,proof)).status;
         o.preflightSnapshot=(await pg.claimPrepare((await pg.listCampaigns())[0],{fetchedTerms:'forged renderer evidence'})).reason!=='official_terms_not_fetched'
       }catch(e){o.add='ERR '+e.message}
@@ -696,16 +723,22 @@ app.whenReady().then(() => {
       o.inline=await new Promise(r=>{window.__x=0;const s=document.createElement('script');s.textContent='window.__x=1';document.head.append(s);setTimeout(()=>r(window.__x===1?'RAN':'blocked'),200)});
       return o})()`);
     const required = ['pg','node','offlineWebBundleApi','styled','viewCount','navigationTargets','noHorizontalOverflow','previewNoticeHidden','appErrorHidden',
-      'marketsNavigation','analyticsNavigation','analyticsFlags','analyticsActivity','overviewNavigation','add','dup','review','archived','sourceUnverified','snapshot','sourceAttested','preflightSnapshot','badDomain','domainAdded','domainRemoved',
-      'badfeed','badmanifest','ton','refresh','wc','badpid','wcrefresh','wcbad','minRewardDefault','minRewardSaved','feedAdded','feedRemoved',
+      'marketsNavigation','marketsHeadingFocus','activeNavigation','analyticsNavigation','analyticsFlags','analyticsActivity','overviewNavigation','add','dup','review','archived','sourceUnverified','snapshot','sourceAttested','preflightSnapshot','badDomain','domainAdded','domainRemoved',
+      'campaignListAnnounced','snapshotRevisionLabels','reviewControlsLabeled','snapshotComparisonAnnounced','diffRowsAccessible','badfeed','badmanifest','ton','refresh','wc','badpid','wcrefresh','wcbad','minRewardDefault','minRewardSaved','feedAdded','feedRemoved',
       'scheduleDisabled','notificationMessage','notificationDismissed','signApi','inline'];
     const checks = { pg: r.pg === 'object', node: r.node === 'undefinedundefined', offlineWebBundleApi: r.offlineWebBundleApi, styled: r.styled,
       viewCount: r.viewCount === 8, navigationTargets: r.navigationTargets, noHorizontalOverflow: r.noHorizontalOverflow,
       previewNoticeHidden: r.previewNoticeHidden, appErrorHidden: r.appErrorHidden, marketsNavigation: r.marketsNavigation,
+      marketsHeadingFocus: r.marketsHeadingFocus, activeNavigation: r.activeNavigation,
       analyticsNavigation: r.analyticsNavigation, overviewNavigation: r.overviewNavigation, add: r.add === 'UNVERIFIED', dup: r.dup, review: r.review === 'UNDER_REVIEW',
       analyticsFlags: r.analyticsFlags, analyticsActivity: r.analyticsActivity,
       archived: r.archived,
       sourceUnverified: r.sourceUnverified === 'UNDER_REVIEW', snapshot: r.snapshot, sourceAttested: r.sourceAttested === 'ELIGIBLE_FOR_REVIEW',
+      snapshotRevisionLabels: r.snapshotRevisionLabels,
+      reviewControlsLabeled: r.reviewControlsLabeled,
+      campaignListAnnounced: r.campaignListAnnounced,
+      snapshotComparisonAnnounced: r.snapshotComparisonAnnounced,
+      diffRowsAccessible: r.diffRowsAccessible,
       preflightSnapshot: r.preflightSnapshot,
       badDomain: r.badDomain === 'rejected', domainAdded: r.domainAdded, domainRemoved: r.domainRemoved, badfeed: r.badfeed === 'rejected',
       badmanifest: r.badmanifest === 'rejected', ton: r.ton === 'disconnected/ton-testnet/consent=false', refresh: r.refresh === 'refused',
@@ -716,7 +749,10 @@ app.whenReady().then(() => {
     const failed = required.filter(k => checks[k] !== true);
     if (process.env.PG_SMOKE_WIDTH && Number(process.env.PG_SMOKE_WIDTH) <= 760) {
       if (!r.mobileMenuExpanded) failed.push('mobileMenuExpanded');
+      if (!r.mobileMenuFocus) failed.push('mobileMenuFocus');
+      if (!r.mobileEscapeCloses) failed.push('mobileEscapeCloses');
       if (!r.mobileMenuCloses) failed.push('mobileMenuCloses');
+      if (!r.mobileViewFocus) failed.push('mobileViewFocus');
     }
     console.log('SMOKE ' + JSON.stringify({ ...r, failed }));
     app.exit(failed.length ? 1 : 0);
