@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PromoGuard — Offline web preview</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">PROMOGUARD · OFFLINE PREVIEW</p>
+      <h1>Campaign workspace</h1>
+      <p>Open a read-only JSON bundle exported from the desktop app. The selected file is processed locally and never uploaded.</p>
+    </header>
+    <section class="panel" aria-labelledby="import-title">
+      <h2 id="import-title">Import a bundle</h2>
+      <label for="bundleFile">PromoGuard web bundle (JSON)</label>
+      <input id="bundleFile" type="file" accept="application/json,.json">
+      <p id="importStatus" role="status" aria-live="polite"></p>
+      <div id="summary"></div>
+      <button id="clearBundle" type="button">Clear local view</button>
+    </section>
+    <section class="panel" aria-labelledby="campaign-title">
+      <h2 id="campaign-title">Campaigns</h2>
+      <label for="campaignSearch">Search campaigns</label>
+      <input id="campaignSearch" type="search" autocomplete="off" disabled>
+      <p id="campaignSearchStatus" class="empty" role="status" aria-live="polite">Import a bundle to search campaigns.</p>
+      <div id="campaigns"></div>
+    </section>
+    <section class="panel" aria-labelledby="filter-title">
+      <h2 id="filter-title">Evidence and history</h2>
+      <label for="campaignFilter">Show records for</label>
+      <select id="campaignFilter" aria-controls="evidence history" disabled>
+        <option value="all">All campaigns</option>
+      </select>
+      <p id="filterStatus" class="empty">Import a bundle to filter its evidence and history.</p>
+    </section>
+    <section class="panel" aria-labelledby="evidence-title"><h2 id="evidence-title">Evidence revisions</h2><div id="evidence"></div></section>
+    <section class="panel" aria-labelledby="history-title"><h2 id="history-title">Status history</h2><div id="history"></div></section>
+    <footer>Read-only offline view · Not independently verified · No account, wallet, sync, or network access</footer>
+  </main>
+  <script src="bundle.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

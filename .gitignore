@@ -1,0 +1,7 @@
+node_modules/
+*.db
+dist*/
+*.log
+.kilo/
+MY_WALLET.md
+Roles-In-A-Data-Analytics/

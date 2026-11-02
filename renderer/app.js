@@ -26,7 +26,7 @@ if (!window.pg) {
       if (active) item.setAttribute('aria-current', 'page');
       else item.removeAttribute('aria-current');
     });
-    document.getElementById('pageTitle').textContent = { overview: 'Overview', promoguard: 'PromoGuard', markets: 'Markets', predictions: 'Predictions (Paper)', wallets: 'Wallet Center', activity: 'Activity', settings: 'Settings & AI' }[name] || 'Overview';
+    document.getElementById('pageTitle').textContent = { overview: 'Overview', promoguard: 'PromoGuard', markets: 'Markets', predictions: 'Predictions (Paper)', wallets: 'Wallet Center', activity: 'Activity', analytics: 'Analytics', settings: 'Settings & AI' }[name] || 'Overview';
     document.body.classList.remove('sidebar-open');
     document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
     document.getElementById('mobileBackdrop').hidden = true;
@@ -71,7 +71,7 @@ window.addEventListener('error', event => {
   console.error('PromoGuard renderer error:', event.error || event.message);
   showAppError('The interface encountered an unexpected error. Please restart the app if it continues.');
 });
-const viewNames = { overview: 'Overview', promoguard: 'PromoGuard', markets: 'Markets', predictions: 'Predictions (Paper)', wallets: 'Wallet Center', activity: 'Activity', settings: 'Settings & AI' };
+const viewNames = { overview: 'Overview', promoguard: 'PromoGuard', markets: 'Markets', predictions: 'Predictions (Paper)', wallets: 'Wallet Center', activity: 'Activity', analytics: 'Analytics', settings: 'Settings & AI' };
 function setView(name) {
   if (!viewNames[name]) return;
   document.querySelectorAll('[data-view-panel]').forEach(panel => {
@@ -90,6 +90,7 @@ function setView(name) {
   document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
   document.getElementById('mobileBackdrop').hidden = true;
   clearAppError();
+  if (name === 'analytics') renderAnalytics();
 }
 document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
 document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListener('click', event => {
@@ -115,6 +116,8 @@ function reviewForm(r) {
   const tok = Object.assign(el('input'), { placeholder: 'Token ID (network + contract)' });
   const urlLabel = el('label', 'field'); urlLabel.append(el('span', '', 'Official terms URL'), url);
   const termsLabel = el('label', 'field'); termsLabel.append(el('span', '', 'Terms text snapshot (paste from the official page)'), terms);
+  const fetchBtn = Object.assign(el('button', 'button button-secondary', 'Fetch official terms'), { type: 'button' });
+  const fetchStatus = el('p', 'fetch-status'); fetchStatus.setAttribute('role', 'status');
   const amountLabel = el('label', 'field'); amountLabel.append(el('span', '', 'Published reward amount'), amt);
   const tokenLabel = el('label', 'field'); tokenLabel.append(el('span', '', 'Token ID'), tok);
   const snapshotHelp = el('small', '', 'Manual evidence only: no site is contacted. Verify the source yourself, remove any personal information, and keep the URL identical to the snapshot URL.');
@@ -128,7 +131,7 @@ function reviewForm(r) {
   const save = el('button', 'button button-secondary', 'Save terms snapshot');
   save.type = 'button';
   const go = el('button', '', 'Submit evidence');
-  f.append(urlLabel, termsLabel, snapshotHelp, save, snapshotStatus, history, amountLabel, tokenLabel, lab, sourceLab, go);
+  f.append(urlLabel, termsLabel, fetchBtn, fetchStatus, snapshotHelp, save, snapshotStatus, history, amountLabel, tokenLabel, lab, sourceLab, go);
   const loadHistory = async () => {
     const snapshots = await pg.listCampaignTermsSnapshots(r.id);
     history.replaceChildren(el('strong', '', `Saved terms snapshots: ${snapshots.length}`));
@@ -153,6 +156,46 @@ function reviewForm(r) {
       item.append(load);
       history.append(item);
     });
+
+    // Snapshot version diff
+    const diffSection = el('div', 'snapshot-diff');
+    const diffTitle = el('h3', '', 'Compare snapshot revisions');
+    const diffNote = el('small', '', 'Select two saved revisions to see what changed between them.');
+    const selA = Object.assign(el('select'), { className: 'diff-select' });
+    const selB = Object.assign(el('select'), { className: 'diff-select' });
+    snapshots.forEach(s => {
+      const label = `${s.fetched_at} · SHA-256 ${s.content_hash.slice(0, 12)}`;
+      selA.append(Object.assign(el('option'), { value: s.id, textContent: label }));
+      selB.append(Object.assign(el('option'), { value: s.id, textContent: label }));
+    });
+    if (snapshots.length >= 2) selB.value = snapshots[1].id;
+    const cmpBtn = Object.assign(el('button', 'button button-secondary', 'Compare revisions'), { type: 'button' });
+    const diffResult = el('div', 'diff-result');
+    diffSection.append(diffTitle, diffNote, el('div', '', selA), el('div', '', selB), cmpBtn, diffResult);
+    history.append(diffSection);
+
+    cmpBtn.addEventListener('click', async () => {
+      const idA = Number(selA.value); const idB = Number(selB.value);
+      if (idA === idB) { diffResult.textContent = 'Select two different revisions.'; return; }
+      diffResult.textContent = 'Comparing…';
+      try {
+        const result = await pg.compareSnapshots(r.id, idA, idB);
+        diffResult.replaceChildren();
+        const summary = el('div', 'diff-summary');
+        summary.append(el('b', '', `Revision ${result.snapshotA.id} → ${result.snapshotB.id}`),
+          el('span', '', ` +${result.summary.added} / -${result.summary.removed} lines, ${result.summary.unchanged} unchanged`));
+        diffResult.append(summary);
+        const diffTable = el('div', 'diff-table');
+        result.diff.forEach(op => {
+          const row = el('div', `diff-row diff-${op.type}`);
+          const marker = el('span', 'diff-marker', op.type === 'added' ? '+' : op.type === 'removed' ? '-' : ' ');
+          const content = el('span', 'diff-content', op.line);
+          row.append(marker, content);
+          diffTable.append(row);
+        });
+        diffResult.append(diffTable);
+      } catch (error) { diffResult.textContent = `Comparison failed: ${error.message || 'try again.'}`; }
+    });
   };
   loadHistory().catch(error => { snapshotStatus.textContent = `Could not load saved evidence: ${error.message || 'try again.'}`; });
   save.addEventListener('click', async () => {
@@ -163,6 +206,21 @@ function reviewForm(r) {
       await loadHistory();
     } catch (error) {
       snapshotStatus.textContent = `Snapshot was not saved: ${error.message || 'check the URL and pasted text.'}`;
+    }
+  });
+  fetchBtn.addEventListener('click', async () => {
+    fetchStatus.textContent = 'Fetching official terms…';
+    try {
+      const fetched = await pg.fetchCampaignTerms(url.value, r.evidence || undefined);
+      terms.value = fetched.content;
+      url.value = fetched.url;
+      const verification = await pg.verifySource(url.value, r.evidence || undefined);
+      const matchNote = verification.ownershipMatch === null ? '' : verification.ownershipMatch ? ' Source domain matches the campaign evidence URL.' : ' WARNING: fetched domain does not match the campaign evidence URL — treat as unverified.';
+      const dnsNote = verification.allAddressesPublic === false ? ' DNS resolves to non-public address(es).' : verification.dnsResolution.error ? ` DNS lookup: ${verification.dnsResolution.error}.` : ` DNS resolves to ${verification.dnsResolution.addresses.join(', ')}.`;
+      const verifiedNote = verification.verified ? ' Source verification: PASS.' : ' Source verification: FAIL — do not treat fetched terms as verified evidence.';
+      fetchStatus.textContent = `Fetched ${fetched.bytes} bytes from ${fetched.url}. Review the text before saving — fetched content is not independently verified.${fetched.redirects.length ? ` Followed ${fetched.redirects.length} redirect(s).` : ''}${matchNote}${dnsNote}${verifiedNote}`;
+    } catch (error) {
+      fetchStatus.textContent = `Terms could not be fetched: ${error.message || 'check the URL and try again.'}`;
     }
   });
   f.addEventListener('submit', async e => { e.preventDefault();
@@ -229,7 +287,8 @@ async function renderClaims() {
   }
 }
 async function render() {
-  const rows = await pg.listCampaigns(), box = document.getElementById('list');
+  const showArchived = document.getElementById('showArchived')?.checked === true;
+  const rows = await (showArchived ? pg.listArchivedCampaigns() : pg.listCampaigns()), box = document.getElementById('list');
   const n = statuses => rows.filter(r => statuses.includes(r.status)).length;
   const tally = document.getElementById('tally'); tally.replaceChildren();
   [['Campaigns tracked', rows.length, ''], ['Eligible for review', n(['ELIGIBLE_FOR_REVIEW']), 'stat-accent'], ['Under review', n(['UNDER_REVIEW']), ''], ['Rejected', n(['REJECTED', 'INELIGIBLE']), 'stat-danger']].forEach(([k, v, tone]) => {
@@ -250,6 +309,7 @@ async function render() {
   const search = (document.getElementById('campaignSearch').value || '').trim().toLowerCase();
   const selectedStatus = document.getElementById('campaignStatus').value;
   const filtered = rows.filter(r => {
+    if (!showArchived && r.archived) return false;
     const statusMatch = selectedStatus === 'all' || (selectedStatus === 'REJECTED' ? ['REJECTED', 'INELIGIBLE'].includes(r.status) : r.status === selectedStatus);
     const searchMatch = !search || [r.name, r.description, r.source_url, r.network, r.token_id].some(value => String(value || '').toLowerCase().includes(search));
     return statusMatch && searchMatch;
@@ -272,8 +332,23 @@ async function render() {
     if (r.status === 'UNDER_REVIEW') d.append(reviewForm(r));
     if (['UNVERIFIED', 'UNDER_REVIEW', 'ELIGIBLE_FOR_REVIEW'].includes(r.status)) { const b = el('button', '', 'Reject'); b.onclick = async () => { await pg.reviewReject(r.id, 'rejected by user'); render(); }; d.append(b); }
     if (r.status === 'ELIGIBLE_FOR_REVIEW') d.append(claimForm(r));
+    const editB = el('button', 'button-quiet', 'Edit'); editB.onclick = async () => {
+      const name = prompt('Campaign name', r.name || ''); if (name === null) return;
+      const network = prompt('Network', r.network || ''); if (network === null) return;
+      const tokenId = prompt('Token ID', r.token_id || ''); if (tokenId === null) return;
+      const reward = prompt('Reward amount', r.reward_amount ?? ''); if (reward === null) return;
+      const endDate = prompt('End date (YYYY-MM-DD)', r.end_date || ''); if (endDate === null) return;
+      try {
+        const res = await pg.editCampaign(r.id, { name: name || undefined, network: network || undefined, tokenId: tokenId || undefined, rewardAmount: reward === '' ? undefined : Number(reward), endDate: endDate || undefined });
+        say('result', `Campaign updated. Status: ${res.status}${res.reasons.length ? ' · ' + res.reasons.join(', ') : ''}`); render();
+      } catch (error) { showAppError(`Edit failed: ${error.message || 'try again.'}`); }
+    }; d.append(editB);
+    const archB = el('button', 'button-quiet', r.archived ? 'Unarchive' : 'Archive'); archB.onclick = async () => {
+      try { await pg.archiveCampaign(r.id, !r.archived); say('result', `Campaign ${r.archived ? 'unarchived' : 'archived'}.`); render(); } catch (error) { showAppError(`Archive failed: ${error.message || 'try again.'}`); }
+    }; d.append(archB);
     return d; }));
   renderClaims();
+  if (!document.getElementById('view-analytics').hidden) renderAnalytics();
 }
 function safeReasons(value) {
   try { const parsed = JSON.parse(value || '[]'); return Array.isArray(parsed) ? parsed.map(String) : []; }
@@ -281,6 +356,19 @@ function safeReasons(value) {
 }
 document.getElementById('campaignSearch').addEventListener('input', render);
 document.getElementById('campaignStatus').addEventListener('change', render);
+document.getElementById('showArchived').addEventListener('change', render);
+document.getElementById('backupExport').addEventListener('click', async () => {
+  try { const res = await pg.backupExport(); say('dres', res.exported ? `Backup exported: ${res.campaigns} campaign(s) to ${res.path}` : 'Export cancelled.'); } catch (error) { showAppError(`Export failed: ${error.message || 'try again.'}`); }
+});
+document.getElementById('backupImport').addEventListener('click', async () => {
+  try { const res = await pg.backupImport(); if (!res.imported) { say('dres', 'Import cancelled.'); return; } say('dres', `Imported ${res.importedCount} campaign(s), skipped ${res.skippedCount} duplicate(s).`); render(); } catch (error) { showAppError(`Import failed: ${error.message || 'try again.'}`); }
+});
+document.getElementById('webBundleExport').addEventListener('click', async () => {
+  try {
+    const result = await pg.exportWebBundle();
+    say('dres', result.exported ? `Read-only web bundle exported: ${result.campaigns} campaign(s) to ${result.path}` : 'Web bundle export cancelled.');
+  } catch (error) { showAppError(`Web bundle export failed: ${error.message || 'try again.'}`); }
+});
 document.getElementById('f').addEventListener('submit', async e => {
   e.preventDefault(); clearAppError(); const f = new FormData(e.target), free = f.get('confirmFree') === 'on';
   const c = { name: f.get('name'), sourceUrl: f.get('sourceUrl'), network: f.get('network'), tokenId: f.get('tokenId'),
@@ -552,5 +640,149 @@ async function renderReceipts() {
   if (!rs.length) { box.append(el('p', 'empty', 'No claims yet.')); return; }
   rs.forEach(r => box.append(el('div', 'row ' + cls(r.state), `${r.name}: ${LABEL[r.state] || r.state} — ${r.network}, amount ${r.reward_amount ?? 'n/a'}, tx ${r.tx_hash || 'none'}`)));
 }
-renderHealth(); renderNotifications(); renderAlerts(); renderReceipts();
+renderHealth(); renderNotifications(); renderAlerts(); renderReceipts(); renderAnalytics();
 })();
+
+async function renderAnalytics() {
+  try {
+    const [overview, flags, history, rewards] = await Promise.all([
+      pg.analyticsOverview(), pg.analyticsFlags(), pg.analyticsHistory(), pg.analyticsRewards()
+    ]);
+
+    const box = document.getElementById('analyticsOverviewStats');
+    box.replaceChildren();
+    const byStatus = overview.byStatus || {};
+    const total = overview.total || 0;
+    const statRows = [
+      ['Campaigns tracked', total, ''],
+      ['Eligible for review', byStatus.ELIGIBLE_FOR_REVIEW || 0, 'stat-accent'],
+      ['Under review', byStatus.UNDER_REVIEW || 0, ''],
+      ['Rejected / ineligible', (byStatus.REJECTED || 0) + (byStatus.INELIGIBLE || 0), 'stat-danger'],
+      ['Unverified', byStatus.UNVERIFIED || 0, ''],
+      ['Expired', byStatus.EXPIRED || 0, '']
+    ];
+    statRows.forEach(([k, v, tone]) => {
+      const d = el('div', 'stat-card'); d.append(el('b', tone, v), el('span', '', k)); box.append(d);
+    });
+
+    const rewardsBox = document.getElementById('analyticsRewardsNote');
+    const rc = overview.rewards || {};
+    rewardsBox.textContent = `Stated rewards on ${rc.count || 0} campaign(s). Total ${rc.total || 0}, avg ${(rc.avg || 0).toFixed(2)}, range ${rc.min || 0}–${rc.max || 0}. Stated amounts are not earnings or balances.`;
+
+    drawDonut('chartStatus', byStatus, {
+      ELIGIBLE_FOR_REVIEW: '#54d5a0', REJECTED: '#ff7b80', INELIGIBLE: '#ff7b80',
+      UNDER_REVIEW: '#f2bd65', UNVERIFIED: '#71839a', EXPIRED: '#9aaabd',
+      DISCOVERED: '#74a9ff', AWAITING_USER_APPROVAL: '#74a9ff', CLAIM_SUBMITTED: '#74a9ff',
+      REWARD_PENDING: '#f2bd65', REWARD_RECEIVED: '#54d5a0', FAILED: '#ff7b80'
+    }, 'Campaign status');
+
+    const byNetwork = overview.byNetwork || {};
+    drawDonut('chartNetwork', byNetwork, {
+      'ton-testnet': '#40c9b0', 'ton-mainnet': '#20aa96', 'eip155:1': '#74a9ff',
+      'eip155:56': '#f2bd65', 'eip155:97': '#f2bd65', 'eip155:11155111': '#74a9ff'
+    }, 'Network');
+
+    drawBars('chartFlags', flags || {}, 'Payment condition flags', v => v > 0 ? '#ff7b80' : '#27384a');
+
+    drawHistory('chartHistory', (history && history.daily) || [], 'Status changes per day');
+
+    drawRewardHistogram('chartRewards', (rewards && rewards.bins) || [], 'Stated reward amount histogram (bins of 5 token units)');
+  } catch (error) {
+    console.error('Analytics failed:', error);
+  }
+}
+
+function ctxOf(id) { return document.getElementById(id).getContext('2d'); }
+
+function fitCanvas(canvas) {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const cssW = canvas.clientWidth || 400; const cssH = canvas.clientHeight || 260;
+  canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+  return { ctx, w: cssW, h: cssH };
+}
+
+function clearCanvas(ctx, w, h) { ctx.clearRect(0, 0, w, h); }
+
+function donutSegments(values) {
+  const total = Object.values(values).reduce((a, b) => a + b, 0);
+  if (total <= 0) return [];
+  let start = 0; const out = [];
+  for (const [k, v] of Object.entries(values)) {
+    if (!v) continue;
+    const slice = (v / total) * 2 * Math.PI; out.push({ key: k, value: v, start, end: start + slice }); start += slice;
+  }
+  return out;
+}
+
+function drawDonut(id, values, colorMap, title) {
+  const { ctx, w, h } = fitCanvas(document.getElementById(id));
+  clearCanvas(ctx, w, h);
+  const cx = w / 2, cy = h / 2 - 8, outerR = Math.min(w, h) / 2 - 22, innerR = outerR * 0.52;
+  const segs = donutSegments(values);
+  if (segs.length === 0) { ctx.fillStyle = '#71839a'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('No data', cx, cy + 4); return; }
+  let cursor = 0;
+  for (const s of segs) {
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, outerR, s.start, s.end); ctx.closePath();
+    ctx.fillStyle = colorMap[s.key] || '#74a9ff'; ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(cx, cy, innerR, 0, 2 * Math.PI); ctx.fillStyle = '#0b111a'; ctx.fill();
+  ctx.fillStyle = '#edf3f8'; ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText(title, cx, cy - 6); ctx.font = '16px system-ui'; ctx.fillText(String(total), cx, cy + 6);
+  ctx.font = '10px system-ui'; ctx.fillStyle = '#9aaabd';
+  const legendX = w - 130; let legendY = 22;
+  for (const s of segs) {
+    ctx.fillStyle = colorMap[s.key] || '#74a9ff'; ctx.fillRect(legendX, legendY, 10, 10);
+    ctx.fillStyle = '#edf3f8'; ctx.fillText(`${s.key}: ${s.value}`, legendX + 16, legendY + 9); legendY += 16;
+  }
+}
+
+function drawBars(id, values, title, colorOf) {
+  const { ctx, w, h } = fitCanvas(document.getElementById(id));
+  clearCanvas(ctx, w, h);
+  const items = Object.entries(values).filter(([, v]) => v > 0);
+  if (items.length === 0) { ctx.fillStyle = '#71839a'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('No data', w / 2, h / 2); return; }
+  const maxV = Math.max(...items.map(([, v]) => v));
+  const pad = 44, gap = 14; const barW = (w - pad * 2 - gap * (items.length - 1)) / items.length;
+  ctx.fillStyle = '#edf3f8'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(title, w / 2, 16);
+  items.forEach(([k, v], i) => {
+    const bh = Math.max(4, (v / maxV) * (h - pad - 34)); const x = pad + i * (barW + gap); const y = h - pad - bh;
+    ctx.fillStyle = colorOf(v); ctx.fillRect(x, y, barW, bh);
+    ctx.fillStyle = '#9aaabd'; ctx.font = '9px system-ui'; ctx.textAlign = 'center'; ctx.fillText(k, x + barW / 2, h - pad + 11);
+    ctx.fillStyle = '#edf3f8'; ctx.font = '10px system-ui'; ctx.fillText(String(v), x + barW / 2, y - 6);
+  });
+}
+
+function drawHistory(id, daily, title) {
+  const { ctx, w, h } = fitCanvas(document.getElementById(id));
+  clearCanvas(ctx, w, h);
+  const pts = daily.filter(([, v]) => v > 0);
+  if (pts.length === 0) { ctx.fillStyle = '#71839a'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('No data', w / 2, h / 2); return; }
+  const maxV = Math.max(...pts.map(([, v]) => v));
+  const pad = 44, topPad = 26; const plotW = w - pad * 2; const plotH = h - pad - topPad;
+  ctx.fillStyle = '#edf3f8'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(title, w / 2, 16);
+  ctx.strokeStyle = '#27384a'; ctx.beginPath(); ctx.moveTo(pad, h - pad); ctx.lineTo(w - pad, h - pad); ctx.stroke();
+  pts.forEach(([d, v], i) => {
+    const x = pad + (i / Math.max(1, pts.length - 1)) * plotW; const y = h - pad - (v / maxV) * plotH;
+    ctx.fillStyle = '#40c9b0'; ctx.beginPath(); ctx.arc(x, y, 3, 0, 2 * Math.PI); ctx.fill();
+    if (i > 0) { const px = pad + ((i - 1) / Math.max(1, pts.length - 1)) * plotW; const py = h - pad - (pts[i - 1][1] / maxV) * plotH;
+      ctx.strokeStyle = '#40c9b0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke(); }
+    ctx.fillStyle = '#9aaabd'; ctx.font = '9px system-ui'; ctx.textAlign = 'center'; ctx.fillText(d.slice(5), x, h - pad + 13);
+  });
+}
+
+function drawRewardHistogram(id, bins, title) {
+  const { ctx, w, h } = fitCanvas(document.getElementById(id));
+  clearCanvas(ctx, w, h);
+  const items = bins.filter(([, v]) => v > 0);
+  if (items.length === 0) { ctx.fillStyle = '#71839a'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('No data', w / 2, h / 2); return; }
+  const maxV = Math.max(...items.map(([, v]) => v));
+  const pad = 56, gap = 10; const barW = (w - pad * 2 - gap * (items.length - 1)) / items.length;
+  ctx.fillStyle = '#edf3f8'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(title, w / 2, 16);
+  items.forEach(([b, v], i) => {
+    const bh = Math.max(4, (v / maxV) * (h - pad - 34)); const x = pad + i * (barW + gap); const y = h - pad - bh;
+    ctx.fillStyle = '#74a9ff'; ctx.fillRect(x, y, barW, bh);
+    ctx.fillStyle = '#9aaabd'; ctx.font = '9px system-ui'; ctx.textAlign = 'center'; ctx.fillText(String(b), x + barW / 2, h - pad + 11);
+    ctx.fillStyle = '#edf3f8'; ctx.font = '10px system-ui'; ctx.fillText(String(v), x + barW / 2, y - 6);
+  });
+}

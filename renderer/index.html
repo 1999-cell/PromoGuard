@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>PromoGuard — Opportunity intelligence</title>
+  <link rel="stylesheet" href="style.css?v=20261026-1641">
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Skip to main content</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#overview" data-view-link="overview" aria-label="PromoGuard overview">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span><strong>PromoGuard</strong><small>Opportunity intelligence</small></span>
+      </a>
+
+      <div class="nav-caption">WORKSPACE</div>
+      <nav class="primary-nav">
+        <button class="nav-item active" type="button" data-view="overview"><span class="nav-icon" aria-hidden="true">⌂</span>Overview</button>
+        <button class="nav-item" type="button" data-view="promoguard"><span class="nav-icon" aria-hidden="true">◇</span>PromoGuard</button>
+        <button class="nav-item" type="button" data-view="markets"><span class="nav-icon" aria-hidden="true">⌁</span>Markets</button>
+        <button class="nav-item" type="button" data-view="predictions"><span class="nav-icon" aria-hidden="true">◷</span>Predictions <span class="nav-tag">PAPER</span></button>
+        <button class="nav-item" type="button" data-view="wallets"><span class="nav-icon" aria-hidden="true">▣</span>Wallet Center</button>
+        <button class="nav-item" type="button" data-view="activity"><span class="nav-icon" aria-hidden="true">≋</span>Activity</button>
+        <button class="nav-item" type="button" data-view="analytics"><span class="nav-icon" aria-hidden="true">▩</span>Analytics</button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-safety">
+        <span class="status-dot" aria-hidden="true"></span>
+        <div><strong>Read-only by design</strong><small>No signing or transfers</small></div>
+      </div>
+      <button class="nav-item settings-link" type="button" data-view="settings"><span class="nav-icon" aria-hidden="true">⚙</span>Settings &amp; AI</button>
+      <div class="sidebar-footer">Local workspace <span>•</span> v0.1.0</div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <button class="icon-button menu-toggle" id="navToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+        <div class="breadcrumbs"><span>Workspace</span><span aria-hidden="true">/</span><strong id="pageTitle">Overview</strong></div>
+        <div class="topbar-status"><span class="status-dot" aria-hidden="true"></span><span>Local data</span><span class="status-divider"></span><span>No trades enabled</span></div>
+      </header>
+
+      <main id="mainContent" tabindex="-1">
+        <div id="runtimeNotice" class="browser-preview-notice" role="note" hidden></div>
+        <div id="appError" class="app-error" role="alert" aria-live="assertive" hidden></div>
+        <section class="view active" id="view-overview" data-view-panel="overview" aria-labelledby="overview-title">
+          <div class="page-heading">
+            <div><p class="eyebrow">YOUR WORKSPACE</p><h1 id="overview-title">Overview</h1><p class="page-subtitle">A clear view of campaign reviews, wallet connections, and local activity.</p></div>
+            <button class="button button-primary" type="button" data-view="promoguard">＋ Review a campaign</button>
+          </div>
+
+          <section class="panel overview-summary" aria-labelledby="summary-title">
+            <div class="panel-heading"><div><p class="eyebrow">CAMPAIGN TRACKER</p><h2 id="summary-title">Review summary</h2></div><button class="text-button" type="button" data-view="promoguard">Open campaigns <span aria-hidden="true">→</span></button></div>
+            <div id="tally" class="stat-grid" aria-label="Campaign totals"></div>
+          </section>
+
+          <div class="overview-grid">
+            <section class="panel" aria-labelledby="recent-title">
+              <div class="panel-heading"><div><p class="eyebrow">LATEST RECORDS</p><h2 id="recent-title">Recent campaigns</h2></div><button class="text-button" type="button" data-view="promoguard">View all <span aria-hidden="true">→</span></button></div>
+              <div id="overview-recent" class="recent-list"><p class="empty-state">Campaigns you add or discover will appear here.</p></div>
+            </section>
+            <section class="panel trust-panel" aria-labelledby="trust-title">
+              <div class="panel-heading"><div><p class="eyebrow">SAFETY FIRST</p><h2 id="trust-title">Designed for careful review</h2></div><span class="shield-icon" aria-hidden="true">✓</span></div>
+              <ul class="safety-list">
+                <li><span aria-hidden="true">✓</span><div><strong>Unknown means unverified</strong><small>Missing campaign terms never count as proof of a free offer.</small></div></li>
+                <li><span aria-hidden="true">✓</span><div><strong>Wallet access stays read-only</strong><small>PromoGuard does not sign, approve, or send transactions.</small></div></li>
+                <li><span aria-hidden="true">✓</span><div><strong>No earnings promises</strong><small>Third parties control eligibility and reward delivery.</small></div></li>
+              </ul>
+              <p class="disclaimer">“Eligible for review” is not a verification, guarantee, or payment confirmation.</p>
+            </section>
+          </div>
+
+          <section class="panel quick-links" aria-labelledby="quick-title">
+            <div class="panel-heading"><div><p class="eyebrow">QUICK ACCESS</p><h2 id="quick-title">Continue where you left off</h2></div></div>
+            <div class="quick-grid">
+              <button class="quick-card" type="button" data-view="promoguard"><span class="quick-icon">◇</span><strong>Campaign review</strong><small>Inspect evidence and conditions</small><span class="quick-arrow">→</span></button>
+              <button class="quick-card" type="button" data-view="wallets"><span class="quick-icon">▣</span><strong>Wallet Center</strong><small>Manage read-only connections</small><span class="quick-arrow">→</span></button>
+              <button class="quick-card" type="button" data-view="activity"><span class="quick-icon">≋</span><strong>Activity log</strong><small>Review local events and alerts</small><span class="quick-arrow">→</span></button>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="view-promoguard" data-view-panel="promoguard" aria-labelledby="promoguard-title" hidden>
+          <div class="page-heading">
+            <div><p class="eyebrow">EVIDENCE-LED REWARD TRACKING</p><h1 id="promoguard-title">PromoGuard</h1><p class="page-subtitle">Find candidates, inspect official terms, and keep uncertain offers unverified.</p></div>
+          </div>
+          <div class="notice notice-warning"><strong>Review carefully.</strong> Feeds provide leads, not verified campaigns. Never share a seed phrase or pay to unlock a reward.</div>
+
+          <section class="panel" aria-labelledby="add-campaign-title">
+            <div class="panel-heading"><div><p class="eyebrow">ADD A RECORD</p><h2 id="add-campaign-title">Check a campaign</h2><p class="section-description">Enter an offer you found on its official project site. Do not rely on a feed title or AI summary as evidence.</p></div></div>
+            <form id="f" class="form-grid">
+              <label class="field"><span>Name</span><input name="name" required maxlength="200" autocomplete="off" placeholder="Campaign name"></label>
+              <label class="field"><span>Official source URL</span><input name="sourceUrl" type="url" required placeholder="https://project.example/terms"></label>
+              <label class="field"><span>Network</span><select name="network"><option>ton-mainnet</option><option>ton-testnet</option><option>eip155:1</option><option>eip155:56</option></select></label>
+              <label class="field"><span>Token ID <small>(network + contract)</small></span><input name="tokenId" placeholder="ton-testnet:native"></label>
+              <label class="field"><span>Published reward amount</span><input name="rewardAmount" type="number" step="any" min="0" placeholder="Only if published in terms"></label>
+              <label class="field"><span>End date</span><input name="endDate" type="date"></label>
+              <fieldset class="check-field full-width"><legend>Payment conditions</legend><label><input type="checkbox" name="confirmFree"><span>I reviewed the official terms and confirmed there is no deposit, gas fee, purchase, staking, paid mint, fund transfer, unlimited approval, or seed phrase request.</span></label><small>If any payment or signature condition is unclear or missing, leave this unchecked. A separate source check is still required.</small></fieldset>
+              <fieldset class="check-field full-width"><legend>Project source</legend><label><input type="checkbox" name="confirmOfficialSource"><span>I independently checked that this is the real project domain and that the official terms page matches this campaign.</span></label><small>This is your attestation, not an automated verification. Add the exact public domain in Settings before it can pass the domain allow-list check.</small></fieldset>
+              <div class="form-actions full-width"><button class="button button-primary" type="submit">Evaluate campaign</button><p id="result" class="form-status" role="status" aria-live="polite"></p></div>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="campaigns-title">
+            <div class="panel-heading panel-heading-wrap"><div><p class="eyebrow">LOCAL CAMPAIGN RECORDS</p><h2 id="campaigns-title">Campaigns</h2></div><label class="search-field"><span class="sr-only">Search campaigns</span><span aria-hidden="true">⌕</span><input id="campaignSearch" type="search" placeholder="Search campaigns" autocomplete="off"></label></div>
+            <div class="filter-row"><label class="filter-field"><span>Status</span><select id="campaignStatus"><option value="all">All statuses</option><option value="UNVERIFIED">Unverified</option><option value="UNDER_REVIEW">Under review</option><option value="ELIGIBLE_FOR_REVIEW">Eligible for review</option><option value="REJECTED">Rejected</option><option value="EXPIRED">Expired</option></select></label><label class="compact-field"><span>Show archived</span><input id="showArchived" type="checkbox"></label><div class="button-row" style="margin-top:8px;"><button id="backupExport" class="button button-secondary" type="button">Export backup</button><button id="backupImport" class="button button-secondary" type="button">Import backup</button><button id="webBundleExport" class="button button-secondary" type="button">Export read-only web bundle</button></div><p class="helper-text">Statuses describe local checks only; they do not promise eligibility or payment. The web bundle is a user-selected, read-only JSON export; it includes campaign terms evidence but excludes settings, wallet data and provider credentials.</p></div>
+            <div id="list" class="campaign-list"><p class="empty-state">No campaigns yet. Add one from its official terms or discover a lead below.</p></div>
+          </section>
+
+          <section class="panel" aria-labelledby="discovery-title">
+            <div class="panel-heading"><div><p class="eyebrow">OPTIONAL PUBLIC FEEDS</p><h2 id="discovery-title">Discover campaign leads</h2><p class="section-description">You approve each manual run. Discovered records always start unverified.</p></div></div>
+            <form id="ff" class="inline-form"><label class="field grow"><span>Public HTTPS feed URL</span><input name="url" type="url" required placeholder="https://example.org/announcements.xml"></label><button class="button button-secondary" type="submit">Add feed</button></form>
+            <div class="button-row"><button id="run" class="button button-primary" type="button">Run discovery now</button><p id="dres" class="form-status" role="status" aria-live="polite"></p></div>
+            <div id="feedList" class="feed-list" aria-label="Configured feeds"></div>
+            <div class="schedule-box"><div><strong>Scheduled checks</strong><small id="scheduleStatus">Disabled. Enabling asks for separate consent for the selected sites and interval.</small></div><label class="compact-field"><span>Minutes</span><input id="mins" type="number" min="15" max="1440" value="60"></label><button id="sched" class="button button-secondary" type="button">Allow schedule</button><button id="unsched" class="button button-quiet" type="button">Stop schedule</button></div>
+          </section>
+
+          <section class="panel" aria-labelledby="claim-title">
+            <div class="panel-heading"><div><p class="eyebrow">LIMITED READ-ONLY CHECKS</p><h2 id="claim-title">Claim preflight</h2><p class="section-description">PromoGuard does not fetch or snapshot official terms. The preflight stays blocked without terms content; no claim is submitted, wallet approval requested, or receipt confirmed.</p></div><span class="status-pill status-neutral">Not a claim service</span></div>
+            <div id="claimlist" class="campaign-list" role="status"></div><div id="claimform"></div><p id="claimresult" class="form-status" role="status" aria-live="polite"></p>
+          </section>
+        </section>
+
+        <section class="view" id="view-markets" data-view-panel="markets" aria-labelledby="markets-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">READ-ONLY MARKET INTELLIGENCE</p><h1 id="markets-title">Markets</h1><p class="page-subtitle">A home for attributed market data, only when a supported provider is configured and verified.</p></div></div>
+          <div class="notice notice-info"><strong>Live market data is not configured.</strong> No prices, charts, or market movements are fabricated in this view.</div>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">POLYMARKET (READ-ONLY)</p><h2>Prediction market intelligence</h2></div></div>
+            <p class="body-copy">PromoGuard includes a read-only Polymarket client (<code>src/markets/polymarket.js</code>) for attributed market data only. No trading, signing, or payouts. Open the official site in your browser.</p>
+            <div class="feature-tags"><span>Read-only</span><span>Source attributed</span><span>No trading actions</span></div>
+            <p class="body-copy"><a href="https://polymarket.com" target="_blank" rel="noopener noreferrer">Open Polymarket web app</a> · <a href="https://docs.polymarket.com" target="_blank" rel="noopener noreferrer">API docs</a></p>
+          </section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">PRODUCT BOUNDARY</p><h2>What this workspace will not do</h2></div></div><p class="body-copy">This release does not provide buying, selling, swaps, deposits, withdrawals, leverage, brokerage, or investment recommendations. A market chart is not a forecast or a promise of returns.</p></section>
+        </section>
+
+        <section class="view" id="view-predictions" data-view-panel="predictions" aria-labelledby="predictions-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">EDUCATIONAL DEMO</p><h1 id="predictions-title">Predictions <span class="title-tag">PAPER MODE</span></h1><p class="page-subtitle">A future space for recording hypothetical forecasts without stakes or payouts.</p></div></div>
+          <div class="notice notice-warning"><strong>Paper/demo only.</strong> This view has no wagers, tokens, deposits, prizes, redeemable points, or payouts.</div>
+          <section class="panel empty-feature"><span class="feature-icon" aria-hidden="true">◷</span><p class="eyebrow">NOT IMPLEMENTED</p><h2>No prediction markets are active</h2><p>Live outcomes and data sources have not been configured or validated. Nothing here represents real odds, a recommendation, or a prediction contract.</p><div class="feature-tags"><span>No money</span><span>No prizes</span><span>No invented outcomes</span></div></section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">BEFORE A PAPER EXPERIMENT</p><h2>Required data quality</h2></div></div><p class="body-copy">A paper-mode feature must identify its source and resolution time, preserve an unresolved state when evidence is unavailable, and keep hypothetical results separate from campaigns and wallet balances.</p></section>
+        </section>
+
+        <section class="view" id="view-wallets" data-view-panel="wallets" aria-labelledby="wallets-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">PUBLIC DATA, WITH CONSENT</p><h1 id="wallets-title">Wallet Center</h1><p class="page-subtitle">Optional read-only connections. A provider may see your public address and network when lookups are enabled.</p></div></div>
+          <div class="notice notice-warning"><strong>Never enter a seed phrase or private key.</strong> Use a testnet for first-time testing. Mainnet balances represent real assets.</div>
+          <section class="panel wallet-panel" aria-labelledby="ton-title">
+            <div class="panel-heading"><div><p class="eyebrow">TON CONNECT</p><h2 id="ton-title">TON wallet <span class="status-pill status-neutral">Read-only</span></h2><p class="section-description">TON balance and transfer lookups are separate from connecting your wallet and require consent.</p></div></div>
+            <div id="tonstate" class="connection-state" role="status" aria-live="polite">Checking wallet state…</div>
+            <div class="form-grid">
+              <label class="field full-width"><span>TON Connect manifest URL <small>(public HTTPS JSON that you host)</small></span><input id="manifest" type="url" placeholder="https://your-domain.example/tonconnect-manifest.json"></label>
+              <div class="form-actions full-width"><button id="setm" class="button button-secondary" type="button">Save manifest URL</button></div>
+              <label class="field"><span>Network</span><select id="net"><option value="ton-testnet">TON Testnet — test tokens, no real value</option><option value="ton-mainnet">TON Mainnet — real assets</option></select></label>
+              <label class="field"><span>Wallet</span><select id="wsel" aria-label="TON wallet"></select></label>
+            </div>
+            <div class="button-row"><button id="wload" class="button button-secondary" type="button">Load wallets</button><button id="wconn" class="button button-primary" type="button">Connect TON wallet</button><button id="wdis" class="button button-quiet" type="button">Disconnect</button></div>
+            <div class="button-row button-row-subtle"><button id="wdata" class="button button-secondary" type="button">Allow balance and history lookups</button><button id="wrevoke" class="button button-quiet" type="button" hidden>Revoke lookup consent</button><button id="wrefresh" class="button button-secondary" type="button">Refresh</button><button id="wcopy" class="button button-quiet" type="button">Copy address</button><button id="wexp" class="button button-quiet" type="button">Open explorer</button><button id="wwipe" class="button button-danger-quiet" type="button">Erase local TON data</button></div>
+            <div id="tondash" class="wallet-dashboard"></div>
+          </section>
+
+          <section class="panel wallet-panel" aria-labelledby="evm-title">
+            <div class="panel-heading"><div><p class="eyebrow">WALLETCONNECT</p><h2 id="evm-title">Trust Wallet <span class="status-pill status-neutral">Read-only</span></h2><p class="section-description">Reads native balances only on supported EVM networks. Token discovery and transaction history are not available.</p></div></div>
+            <div id="wcstate" class="connection-state" role="status" aria-live="polite">Checking wallet state…</div>
+            <div class="form-grid">
+              <label class="field"><span>WalletConnect / Reown project ID</span><input id="wcpid" type="password" autocomplete="off" placeholder="Stored with OS encryption when available"></label>
+              <div class="form-actions align-end"><button id="wcsetpid" class="button button-secondary" type="button">Save project ID</button></div>
+              <label class="field"><span>Network</span><select id="wcnet"><option value="eip155:97">BNB Smart Chain Testnet</option><option value="eip155:56">BNB Smart Chain — real assets</option><option value="eip155:11155111">Ethereum Sepolia Testnet</option><option value="eip155:1">Ethereum Mainnet — real assets</option></select></label>
+              <label class="field"><span>Optional HTTPS RPC URL</span><input id="wcrpc" type="url" placeholder="Check provider privacy and terms first"></label>
+              <div class="form-actions full-width"><button id="wcsetrpc" class="button button-secondary" type="button">Use this RPC for selected network</button></div>
+            </div>
+            <div class="button-row"><button id="wcconn" class="button button-primary" type="button">Connect Trust Wallet (QR)</button><button id="wcdis" class="button button-quiet" type="button">Disconnect</button></div>
+            <img id="wcqr" class="pairing-qr" alt="WalletConnect pairing QR code" hidden width="280" height="280">
+            <div class="button-row button-row-subtle"><button id="wcdata" class="button button-secondary" type="button">Allow balance lookups</button><button id="wcrevoke" class="button button-quiet" type="button" hidden>Revoke lookup consent</button><button id="wcrefresh" class="button button-secondary" type="button">Refresh</button><button id="wccopy" class="button button-quiet" type="button">Copy address</button><button id="wcexp" class="button button-quiet" type="button">Open explorer</button><button id="wcwipe" class="button button-danger-quiet" type="button">Erase local data</button></div>
+            <div id="wcdash" class="wallet-dashboard"></div>
+          </section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">LOCAL DATA CONTROL</p><h2>Wallet metadata</h2><p class="section-description">Clears stored connections, balances, transfer history, and lookup permissions. Encrypted wallet sessions, provider IDs, and RPC URLs remain until erased in their provider panel. Public blockchain records cannot be erased.</p></div></div><button id="clear" class="button button-danger-quiet" type="button">Clear local wallet metadata</button></section>
+        </section>
+
+        <section class="view" id="view-activity" data-view-panel="activity" aria-labelledby="activity-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">LOCAL AUDIT TRAIL</p><h1 id="activity-title">Activity</h1><p class="page-subtitle">Review local activity counters, notifications, alerts, and claim-preflight records.</p></div></div>
+          <section class="panel"><div id="health" role="status" aria-live="polite"></div></section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">LOCAL UPDATES</p><h2>Notifications</h2></div></div><div id="notifications" role="status" aria-live="polite"></div></section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">REVIEW ITEMS</p><h2>Alerts</h2></div></div><div id="alerts" role="status" aria-live="polite"></div></section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">NO CLAIM CONFIRMATION IMPLIED</p><h2>Receipts &amp; claim records</h2></div></div><div id="receipts" role="status" aria-live="polite"></div></section>
+        </section>
+
+        <section class="view" id="view-analytics" data-view-panel="analytics" aria-labelledby="analytics-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">LOCAL READ-ONLY ANALYTICS</p><h1 id="analytics-title">Analytics</h1><p class="page-subtitle">Graphical summaries of local campaign records only. No market data, no live prices, no earnings.</p></div></div>
+          <div class="notice notice-info"><strong>Local data only.</strong> These charts describe campaigns you added or discovered in PromoGuard. They are not market data, not prices, not earnings, and not a forecast.</div>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">OVERVIEW</p><h2>Campaign summary</h2></div></div>
+            <div id="analyticsOverviewStats" class="stat-grid"></div>
+            <div style="margin-top:16px; display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
+              <div style="min-width:0;">
+                <canvas id="chartStatus" width="400" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+              </div>
+              <div style="min-width:0;">
+                <canvas id="chartNetwork" width="400" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">PAYMENT CONDITIONS</p><h2>Payment flags across tracked campaigns</h2></div></div>
+            <canvas id="chartFlags" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">ACTIVITY OVER TIME</p><h2>Status changes per day</h2></div></div>
+            <canvas id="chartHistory" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">STATED REWARD AMOUNTS</p><h2>Reward histogram (stated token units)</h2></div></div>
+            <canvas id="chartRewards" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+            <div id="analyticsRewardsNote" class="note" style="margin-top:10px;"></div>
+          </section>
+        </section>
+
+        <section class="view" id="view-settings" data-view-panel="settings" aria-labelledby="settings-title" hidden>          <div class="page-heading"><div><p class="eyebrow">LOCAL PREFERENCES</p><h1 id="settings-title">Settings &amp; AI</h1><p class="page-subtitle">Optional local assistance and consent-gated read-only tools.</p></div></div>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">ADVISORY ONLY</p><h2>Local AI assistant</h2><p class="section-description">AI may summarize text but cannot verify a campaign, determine eligibility, or override the zero-payment policy.</p></div></div>
+            <label class="field"><span>Campaign terms or text to analyze</span><textarea id="aitext" rows="5" placeholder="Paste text you want summarized. Check it against the official source yourself."></textarea></label>
+            <div class="button-row ai-actions"><button id="aisum" class="button button-secondary" type="button">Summarize rules</button><button id="aiextract" class="button button-secondary" type="button">Extract amounts &amp; deadlines</button><button id="aicomp" class="button button-secondary" type="button">Compare with policy</button><button id="airisk" class="button button-secondary" type="button">Explain risk indicators</button><button id="aievidence" class="button button-secondary" type="button">Write evidence summary</button></div>
+            <div id="airesult" class="ai-result" role="status" aria-live="polite"></div>
+          </section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">EXPLICIT CONSENT REQUIRED</p><h2>Read-only MCP tools</h2><p class="section-description">Grant only tools you understand. Invoking a tool cannot grant itself consent.</p></div></div>
+            <div id="mcptools" class="campaign-list" role="status"></div>
+            <div class="form-grid mcp-form"><label class="field"><span>Tool name</span><input id="mcpname" type="text" placeholder="Choose a listed tool"></label><label class="field"><span>Arguments JSON</span><input id="mcpparams" type="text" placeholder="{}"></label><div class="form-actions full-width"><button id="mcpinvoke" class="button button-secondary" type="button">Invoke granted tool</button></div></div>
+            <p id="mcpresult" class="form-status" role="status" aria-live="polite"></p><div id="mcpconsent" class="helper-text" role="status"></div>
+          </section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">SOURCE POLICY</p><h2>Campaign domain allow-list</h2><p class="section-description">Only domains you explicitly add can pass the local domain check. Adding a domain does not prove it is legitimate; verify it yourself using a reliable official source.</p></div></div>
+            <form id="domainForm" class="inline-form"><label class="field grow"><span>Public domain only</span><input id="domainInput" type="text" maxlength="253" required placeholder="project.example"></label><button class="button button-secondary" type="submit">Add domain</button></form>
+            <p id="domainStatus" class="form-status" role="status" aria-live="polite"></p><div id="approvedDomains" class="domain-list"></div>
+          </section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">CAMPAIGN FILTER</p><h2>Minimum stated reward</h2><p class="section-description">Local threshold in the campaign's stated token units; it is not a price or value comparison. Set to zero to accept any positive stated amount.</p></div></div>
+            <div class="inline-form"><label class="field grow"><span>Minimum positive amount</span><input id="minRewardInput" type="number" min="0" step="any" required></label><button id="saveMinReward" class="button button-secondary" type="button">Save threshold</button></div>
+            <p id="minRewardStatus" class="form-status" role="status" aria-live="polite"></p>
+          </section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">PRODUCT SAFETY</p><h2>What PromoGuard does not do</h2></div></div><p class="body-copy">No trades, swaps, stakes, deposits, claim submissions, wallet signing, or guaranteed rewards. External providers may see public addresses when you explicitly allow lookups.</p></section>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="mobile-backdrop" id="mobileBackdrop" hidden></div>
+  <script src="app.js?v=20261026-1641"></script>
+</body>
+</html>

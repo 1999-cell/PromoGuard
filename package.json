@@ -1,0 +1,42 @@
+{
+  "name": "promoguard",
+  "version": "0.1.0",
+  "description": "Local, read-only campaign review and crypto reward discovery prototype",
+  "main": "main.js",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "smoke": "electron . --no-sandbox",
+    "test": "node test/run.js",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "@tonconnect/sdk": "^5.0.0",
+    "@walletconnect/core": "^2.26.0",
+    "@walletconnect/sign-client": "^2.26.0",
+    "better-sqlite3": "^13.0.3",
+    "lokijs": "^1.5.12",
+    "qrcode": "^1.5.4"
+  },
+  "build": {
+    "appId": "app.promoguard",
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false,
+    "win": {
+      "target": "nsis",
+      "signExecutable": false
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**",
+      "renderer/**"
+    ]
+  }
+}
