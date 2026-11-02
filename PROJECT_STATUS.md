@@ -38,6 +38,10 @@ The application does not trade, sign, approve, send transactions, submit claims,
 - Corrected feed removal/listing, scheduled-discovery status, minimum-reward settings, and the UI path for revoking wallet lookup consent.
 - Scoped wallet-data erasure to the selected provider and revoked related lookup permissions. Encrypted session and project-ID erasure remains a separate provider action.
 - Removed a manual "record health check" control that created a timestamp without checking a service. The Activity view now describes local activity counters and explicitly says external services are not checked there.
+- Labeled dynamically rendered snapshot comparison and WalletConnect network selectors so assistive technology can identify their purpose.
+- Improved keyboard navigation: mobile menu focus is managed on open, selection, and Escape; view changes move focus to the destination heading.
+- Made snapshot-comparison updates live-announced, with semantic list items labeled as added, removed, or unchanged for assistive technology.
+- Added a concise live announcement for campaign search and filter result counts, including no-match states.
 - Updated Electron to 45 and Electron Builder to 26.18, upgraded `better-sqlite3` to its Node-API prebuild release, and disabled unnecessary native rebuilds. This avoids the previous Electron/native-module ABI mismatch and builds without requiring local Visual Studio C++ tools.
 - Switched OS-backed wallet storage to Electron's asynchronous safe-storage API, removing the Electron 45 deprecation warning.
 - Corrected the Windows packaging configuration and made the builder use the installed Electron distribution, avoiding an observed Windows archive rename/lock failure.
@@ -49,7 +53,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 See [TEST_REPORT.md](./TEST_REPORT.md) for exact commands and results. The latest recorded checks are:
 
 - `npm test`: 164 passed, 0 failed, including DNS policy/pinning, redirect validation, backup round-trip/invalid-input, offline web UI, and secure-origin PWA coverage.
-- JavaScript syntax checks: all 62 project JavaScript files passed.
+- JavaScript syntax checks: all 57 project JavaScript files passed; local tooling, dependency, and generated build folders were excluded.
 - Electron smoke checks at 390px and 1180px: exited 0 with `failed:[]`.
 - Direct local web preview: synthetic bundle import, campaign search, and evidence/history filtering passed.
 - Current Windows NSIS packaging build: succeeded to a temporary directory; package is unsigned and has no configured author or app icon.
