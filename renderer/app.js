@@ -20,6 +20,8 @@ if (!window.pg) {
       panel.hidden = !active;
       panel.classList.toggle('active', active);
     });
+    const heading = document.querySelector(`[data-view-panel="${name}"] h1`);
+    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
     document.querySelectorAll('[data-view]').forEach(item => {
       const active = item.dataset.view === name;
       item.classList.toggle('active', active);
@@ -28,7 +30,9 @@ if (!window.pg) {
     });
     document.getElementById('pageTitle').textContent = { overview: 'Overview', promoguard: 'PromoGuard', markets: 'Markets', predictions: 'Predictions (Paper)', wallets: 'Wallet Center', activity: 'Activity', analytics: 'Analytics', settings: 'Settings & AI' }[name] || 'Overview';
     document.body.classList.remove('sidebar-open');
-    document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
+    const toggle = document.getElementById('navToggle');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
     document.getElementById('mobileBackdrop').hidden = true;
   }));
   document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListener('click', event => {
@@ -39,12 +43,24 @@ if (!window.pg) {
   toggle.addEventListener('click', () => {
     const open = document.body.classList.toggle('sidebar-open');
     toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
     backdrop.hidden = !open;
+    if (open) document.querySelector('.primary-nav [data-view]')?.focus();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !document.body.classList.contains('sidebar-open')) return;
+    document.body.classList.remove('sidebar-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
+    backdrop.hidden = true;
+    toggle.focus();
   });
   backdrop.addEventListener('click', () => {
     document.body.classList.remove('sidebar-open');
     toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
     backdrop.hidden = true;
+    toggle.focus();
   });
   return;
 }
@@ -79,6 +95,8 @@ function setView(name) {
     panel.hidden = !active;
     panel.classList.toggle('active', active);
   });
+  const heading = document.querySelector(`[data-view-panel="${name}"] h1`);
+  if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
   document.querySelectorAll('[data-view]').forEach(button => {
     const active = button.dataset.view === name;
     button.classList.toggle('active', active);
@@ -87,7 +105,9 @@ function setView(name) {
   });
   document.getElementById('pageTitle').textContent = viewNames[name];
   document.body.classList.remove('sidebar-open');
-  document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
+  const toggle = document.getElementById('navToggle');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open navigation');
   document.getElementById('mobileBackdrop').hidden = true;
   clearAppError();
   if (name === 'analytics') renderAnalytics();
@@ -100,12 +120,26 @@ document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListe
 document.getElementById('navToggle').addEventListener('click', () => {
   const open = document.body.classList.toggle('sidebar-open');
   document.getElementById('navToggle').setAttribute('aria-expanded', String(open));
+  document.getElementById('navToggle').setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
   document.getElementById('mobileBackdrop').hidden = !open;
+  if (open) document.querySelector('.primary-nav [data-view]')?.focus();
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !document.body.classList.contains('sidebar-open')) return;
+  document.body.classList.remove('sidebar-open');
+  const toggle = document.getElementById('navToggle');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open navigation');
+  document.getElementById('mobileBackdrop').hidden = true;
+  toggle.focus();
 });
 document.getElementById('mobileBackdrop').addEventListener('click', () => {
   document.body.classList.remove('sidebar-open');
-  document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
+  const toggle = document.getElementById('navToggle');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open navigation');
   document.getElementById('mobileBackdrop').hidden = true;
+  toggle.focus();
 });
 const FLAGS = ['requiresDeposit','requiresGas','requiresPurchase','requiresStaking','requiresPaidMint','requiresSendingFunds','requiresUnlimitedApproval','requestsSeedPhrase','unclearSignature','unverifiedSite'];
 function reviewForm(r) {
@@ -171,7 +205,12 @@ function reviewForm(r) {
     if (snapshots.length >= 2) selB.value = snapshots[1].id;
     const cmpBtn = Object.assign(el('button', 'button button-secondary', 'Compare revisions'), { type: 'button' });
     const diffResult = el('div', 'diff-result');
-    diffSection.append(diffTitle, diffNote, el('div', '', selA), el('div', '', selB), cmpBtn, diffResult);
+    diffResult.setAttribute('role', 'status');
+    diffResult.setAttribute('aria-live', 'polite');
+    diffResult.setAttribute('aria-atomic', 'true');
+    const revisionALabel = el('label', 'field'); revisionALabel.append(el('span', '', 'Earlier revision'), selA);
+    const revisionBLabel = el('label', 'field'); revisionBLabel.append(el('span', '', 'Later revision'), selB);
+    diffSection.append(diffTitle, diffNote, revisionALabel, revisionBLabel, cmpBtn, diffResult);
     history.append(diffSection);
 
     cmpBtn.addEventListener('click', async () => {
@@ -186,9 +225,13 @@ function reviewForm(r) {
           el('span', '', ` +${result.summary.added} / -${result.summary.removed} lines, ${result.summary.unchanged} unchanged`));
         diffResult.append(summary);
         const diffTable = el('div', 'diff-table');
+        diffTable.setAttribute('role', 'list');
         result.diff.forEach(op => {
           const row = el('div', `diff-row diff-${op.type}`);
+          row.setAttribute('role', 'listitem');
+          row.setAttribute('aria-label', `${op.type === 'added' ? 'Added' : op.type === 'removed' ? 'Removed' : 'Unchanged'} line: ${op.line || 'blank line'}`);
           const marker = el('span', 'diff-marker', op.type === 'added' ? '+' : op.type === 'removed' ? '-' : ' ');
+          marker.setAttribute('aria-hidden', 'true');
           const content = el('span', 'diff-content', op.line);
           row.append(marker, content);
           diffTable.append(row);
@@ -314,14 +357,20 @@ async function render() {
     const searchMatch = !search || [r.name, r.description, r.source_url, r.network, r.token_id].some(value => String(value || '').toLowerCase().includes(search));
     return statusMatch && searchMatch;
   });
+  const listStatus = document.getElementById('campaignListStatus');
+  const statusText = `Showing ${filtered.length} of ${rows.length} campaign record${rows.length === 1 ? '' : 's'}.${filtered.length ? '' : ' No records match the selected filters.'}`;
+  if (listStatus.textContent !== statusText) listStatus.textContent = statusText;
   box.replaceChildren();
   if (!filtered.length) {
-    box.append(el('p', 'empty-state', rows.length ? 'No campaigns match these filters.' : 'No campaigns yet. Add one from its official terms or discover a lead below.'));
+    const emptyResult = el('p', 'empty-state', rows.length ? 'No campaigns match these filters.' : 'No campaigns yet. Add one from its official terms or discover a lead below.');
+    emptyResult.setAttribute('role', 'listitem');
+    box.append(emptyResult);
     renderClaims();
     return;
   }
   box.replaceChildren(...filtered.map(r => {
     const d = el('div', 'row ' + cls(r.status));
+    d.setAttribute('role', 'listitem');
     d.append(el('div', 'tag', `${r.name}: ${LABEL[r.status] || r.status}`),
       el('div', '', `${r.network || 'no network'}, ${r.reward_amount ?? 'amount not published'} ${r.token_id || ''}, ends ${r.end_date || 'unknown'}`),
       el('div', '', `Reasons: ${safeReasons(r.reasons).join(', ') || 'none recorded'}`),
@@ -476,7 +525,8 @@ async function renderWc() {
   if (!st.accounts.length) { box.append(el('p', 'note', 'The wallet shared no supported account. Reconnect and approve a supported network.')); return; }
   const sel = st.accounts.find(a => a.network === st.selected); wcAddr = sel.address;
   const pick = Object.assign(el('select'), {}); st.accounts.forEach(a => pick.append(Object.assign(el('option'), { value: a.network, textContent: `${a.name}${a.testnet ? ' (test)' : ''}` }))); pick.value = st.selected;
-  pick.onchange = async () => { await pg.wcSelect(pick.value); renderWc(); }; box.append(pick, el('div', '', `Address: ${sel.address}`), el('small', '', `Network ${sel.network}. ${st.persistentSession ? 'Session stored with OS encryption.' : 'Session kept in memory only.'}`));
+  const networkLabel = el('label', 'field'); networkLabel.append(el('span', '', 'Wallet network'), pick);
+  pick.onchange = async () => { await pg.wcSelect(pick.value); renderWc(); }; box.append(networkLabel, el('div', '', `Address: ${sel.address}`), el('small', '', `Network ${sel.network}. ${st.persistentSession ? 'Session stored with OS encryption.' : 'Session kept in memory only.'}`));
   if (!st.rpcConfigured) { box.append(el('p', 'note', 'No RPC provider is configured for this network. Add one above to read balances.')); return; }
   if (!st.dataConsent) { box.append(el('p', 'empty', 'Balance lookups are off. Allow them to send your public address to the RPC provider.')); return; }
   if (!data || !data.snapshot) { box.append(el('p', 'empty', 'No data yet. Press Refresh.')); return; }
