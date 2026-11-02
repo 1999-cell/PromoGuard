@@ -41,7 +41,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 - Labeled dynamically rendered snapshot comparison and WalletConnect network selectors so assistive technology can identify their purpose.
 - Improved keyboard navigation: mobile menu focus is managed on open, selection, and Escape; view changes move focus to the destination heading.
 - Made snapshot-comparison updates live-announced, with semantic list items labeled as added, removed, or unchanged for assistive technology.
-- Added a concise live announcement for campaign search and filter result counts, including no-match states.
+- Exposed campaign results as a named screen-reader list and added a concise live announcement for search/filter result counts, including no-match states.
 - Updated Electron to 45 and Electron Builder to 26.18, upgraded `better-sqlite3` to its Node-API prebuild release, and disabled unnecessary native rebuilds. This avoids the previous Electron/native-module ABI mismatch and builds without requiring local Visual Studio C++ tools.
 - Switched OS-backed wallet storage to Electron's asynchronous safe-storage API, removing the Electron 45 deprecation warning.
 - Corrected the Windows packaging configuration and made the builder use the installed Electron distribution, avoiding an observed Windows archive rename/lock failure.
