@@ -57,7 +57,7 @@ See [TEST_REPORT.md](./TEST_REPORT.md) for exact commands and results. The lates
 
 These checks cover local code paths and mocked providers. They do not establish live integration, clean-install acceptance, legal compliance, security certification, or production readiness.
 
-The checkout contains many source and documentation files as untracked files; only `README.md` and `renderer/app.js` are currently tracked by Git. No files were staged or committed during this audit. Preserve this local checkout before moving it or cleaning any further artifacts.
+The initial public-repository upload includes the current application source, tests, and project documentation from this checkout. Local agent configuration (`.kilo/`), the personal wallet-address note (`MY_WALLET.md`), unrelated analytics files, `node_modules/`, and generated `dist*` outputs are intentionally excluded.
 
 ## Remaining work, in priority order
 
