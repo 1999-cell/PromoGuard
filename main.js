@@ -645,6 +645,22 @@ app.whenReady().then(() => {
       o.noHorizontalOverflow=document.documentElement.scrollWidth<=document.documentElement.clientWidth;
       o.previewNoticeHidden=document.querySelector('#runtimeNotice').hidden;
       o.appErrorHidden=document.querySelector('#appError').hidden;
+      const campaignTotals=document.querySelector('#tally');
+      o.dashboardStatsList=campaignTotals?.getAttribute('role')==='list'&&campaignTotals.getAttribute('aria-label')==='Campaign totals'&&campaignTotals.querySelectorAll(':scope > [role="listitem"]').length===4;
+      o.accessibleControlsByView={};
+      for(const name of ['overview','promoguard','markets','predictions','wallets','activity','analytics','settings']){
+        document.querySelector('[data-view="'+name+'"]').click();
+        await new Promise(resolve=>setTimeout(resolve,30));
+        const panel=document.querySelector('[data-view-panel="'+name+'"]');
+        const controls=[...panel.querySelectorAll('input:not([type="hidden"]),select,textarea,button')].filter(control=>control.getClientRects().length>0&&!control.disabled);
+        o.accessibleControlsByView[name]=controls.filter(control=>{
+          const named=control.matches('button')
+            ? Boolean(control.getAttribute('aria-label')||control.getAttribute('title')||control.textContent.trim())
+            : Boolean(control.getAttribute('aria-label')||control.getAttribute('aria-labelledby')||control.labels?.length);
+          return !named;
+        }).map(control=>`${control.tagName.toLowerCase()}${control.id?`#${control.id}`:''}`);
+      }
+      o.visibleControlsNamed=Object.values(o.accessibleControlsByView).every(missing=>missing.length===0);
       document.querySelector('[data-view="markets"]').click();
       o.marketsNavigation=!document.querySelector('#view-markets').hidden&&document.querySelector('#pageTitle').textContent==='Markets';
       o.marketsHeadingFocus=document.activeElement===document.querySelector('#view-markets h1')&&document.querySelector('#view-markets h1').tabIndex===-1;
@@ -733,12 +749,14 @@ app.whenReady().then(() => {
       o.inline=await new Promise(r=>{window.__x=0;const s=document.createElement('script');s.textContent='window.__x=1';document.head.append(s);setTimeout(()=>r(window.__x===1?'RAN':'blocked'),200)});
       return o})()`);
     const required = ['pg','node','offlineWebBundleApi','styled','viewCount','navigationTargets','noHorizontalOverflow','previewNoticeHidden','appErrorHidden',
-      'marketsNavigation','marketsHeadingFocus','activeNavigation','analyticsNavigation','analyticsFlags','analyticsActivity','overviewNavigation','add','dup','review','archived','sourceUnverified','snapshot','sourceAttested','preflightSnapshot','badDomain','domainAdded','domainRemoved',
+      'dashboardStatsList','visibleControlsNamed','marketsNavigation','marketsHeadingFocus','activeNavigation','analyticsNavigation','analyticsFlags','analyticsActivity','overviewNavigation','add','dup','review','archived','sourceUnverified','snapshot','sourceAttested','preflightSnapshot','badDomain','domainAdded','domainRemoved',
       'campaignListAnnounced','campaignResultsList','campaignEmptyListItem','campaignEmptyAnnounced','snapshotRevisionLabels','reviewControlsLabeled','snapshotComparisonAnnounced','diffRowsAccessible','badfeed','badmanifest','ton','refresh','wc','badpid','wcrefresh','wcbad','minRewardDefault','minRewardSaved','feedAdded','feedRemoved',
       'scheduleDisabled','notificationMessage','notificationDismissed','signApi','inline'];
     const checks = { pg: r.pg === 'object', node: r.node === 'undefinedundefined', offlineWebBundleApi: r.offlineWebBundleApi, styled: r.styled,
       viewCount: r.viewCount === 8, navigationTargets: r.navigationTargets, noHorizontalOverflow: r.noHorizontalOverflow,
       previewNoticeHidden: r.previewNoticeHidden, appErrorHidden: r.appErrorHidden, marketsNavigation: r.marketsNavigation,
+      dashboardStatsList: r.dashboardStatsList,
+      visibleControlsNamed: r.visibleControlsNamed,
       marketsHeadingFocus: r.marketsHeadingFocus, activeNavigation: r.activeNavigation,
       analyticsNavigation: r.analyticsNavigation, overviewNavigation: r.overviewNavigation, add: r.add === 'UNVERIFIED', dup: r.dup, review: r.review === 'UNDER_REVIEW',
       analyticsFlags: r.analyticsFlags, analyticsActivity: r.analyticsActivity,

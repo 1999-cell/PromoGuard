@@ -42,9 +42,11 @@ The commands were run sequentially with `PG_SMOKE=1`, first at 390px and then at
 
 - The preload bridge exists while renderer Node access is unavailable.
 - All eight navigation views resolve correctly and have no horizontal overflow.
+- A scan of visible, enabled controls across all eight views found no unlabeled interactive controls.
 - Navigation exposes its active item and moves keyboard focus to the selected view heading.
 - Mobile navigation opens with focus in the menu, closes on Escape and restores focus to its toggle, and moves focus to the selected view heading.
 - Campaign results expose a named list with list items; search and status/archive filtering announce matching record counts and empty results through a polite live region.
+- Overview campaign totals are exposed as a named list with four metric items.
 - Campaign add, duplicate detection, review transitions, separate source attestation, and domain validation.
 - Terms snapshot save/hash, labeled review-form controls and revision-comparison selectors, announced comparison results with accessible added/removed line labels, and preflight loading the matching persisted snapshot rather than renderer-supplied terms.
 - Analytics view navigation plus working flags/activity queries; archived records are available through the archive-inclusive API.

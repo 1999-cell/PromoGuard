@@ -335,7 +335,7 @@ async function render() {
   const n = statuses => rows.filter(r => statuses.includes(r.status)).length;
   const tally = document.getElementById('tally'); tally.replaceChildren();
   [['Campaigns tracked', rows.length, ''], ['Eligible for review', n(['ELIGIBLE_FOR_REVIEW']), 'stat-accent'], ['Under review', n(['UNDER_REVIEW']), ''], ['Rejected', n(['REJECTED', 'INELIGIBLE']), 'stat-danger']].forEach(([k, v, tone]) => {
-    const d = el('div', 'stat-card'); d.append(el('b', tone, v), el('span', '', k)); tally.append(d); });
+    const d = el('div', 'stat-card'); d.setAttribute('role', 'listitem'); d.append(el('b', tone, v), el('span', '', k)); tally.append(d); });
 
   const recent = document.getElementById('overview-recent');
   recent.replaceChildren();
