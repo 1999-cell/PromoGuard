@@ -18,6 +18,7 @@ class Element {
 
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }
+  setAttribute(name, value) { this.attributes ||= {}; this.attributes[name] = value; }
   addEventListener(name, callback) { this.listeners[name] = callback; }
   click() { this.listeners.click(); }
 }
@@ -73,43 +74,56 @@ test('campaign search and filter scope local records and invalid bundles preserv
   }];
   elements.campaignSearch.value = 'stale filter from previous bundle';
   elements.bundleFile.listeners.change();
-  let loadedRow = elements.campaigns.children[0].children[1];
+  let campaignRegion = elements.campaigns.children[0];
+  let loadedRow = campaignRegion.children[0].children[1];
+  assert.equal(campaignRegion.attributes.role, 'region');
+  assert.match(campaignRegion.attributes['aria-label'], /Campaign search results/);
+  assert.equal(campaignRegion.tabIndex, 0);
+  assert.equal(campaignRegion.children[0].attributes['aria-label'], 'Campaign search results');
+  assert.equal(campaignRegion.children[0].children[0].children[0].scope, 'col');
   assert.equal(loadedRow.children[0].textContent, campaign.name);
   assert.equal(elements.campaignSearch.value, '');
   assert.equal(elements.campaignSearchStatus.textContent, '2 campaign(s).');
   assert.equal(elements.campaignSearch.disabled, false);
   assert.equal(elements.campaignFilter.children.length, 3);
-  assert.equal(elements.evidence.children[0].children.length, 3);
-  assert.equal(elements.history.children[0].children.length, 3);
+  assert.equal(elements.evidence.children[0].children[0].children.length, 3);
+  assert.equal(elements.evidence.children[0].attributes.role, 'region');
+  assert.equal(elements.evidence.children[0].tabIndex, 0);
+  assert.equal(elements.evidence.children[0].children[0].attributes['aria-label'], 'Evidence revisions');
+  assert.equal(elements.evidence.children[0].children[0].children[0].children[0].scope, 'col');
+  assert.equal(elements.history.children[0].children[0].children.length, 3);
+  assert.equal(elements.history.children[0].attributes.role, 'region');
+  assert.equal(elements.history.children[0].tabIndex, 0);
+  assert.equal(elements.history.children[0].children[0].attributes['aria-label'], 'Status history');
   assert.equal(elements.clearBundle.disabled, false);
 
   elements.campaignSearch.value = 'SECOND';
   elements.campaignSearch.listeners.input();
   assert.equal(elements.campaignSearchStatus.textContent, 'Showing 1 of 2 campaign(s).');
-  assert.equal(elements.campaigns.children[0].children.length, 2);
-  assert.equal(elements.campaigns.children[0].children[1].children[0].textContent, 'Second campaign');
+  assert.equal(elements.campaigns.children[0].children[0].children.length, 2);
+  assert.equal(elements.campaigns.children[0].children[0].children[1].children[0].textContent, 'Second campaign');
   elements.campaignSearch.value = 'does not exist';
   elements.campaignSearch.listeners.input();
   assert.equal(elements.campaignSearchStatus.textContent, 'Showing 0 of 2 campaign(s).');
   assert.equal(elements.campaigns.children[0].textContent, 'No campaigns match this search.');
   elements.campaignSearch.value = '';
   elements.campaignSearch.listeners.input();
-  loadedRow = elements.campaigns.children[0].children[1];
+  loadedRow = elements.campaigns.children[0].children[0].children[1];
 
   elements.campaignFilter.value = '2';
   elements.campaignFilter.listeners.change();
   assert.equal(elements.filterStatus.textContent, 'Showing 1 evidence revision(s) and 1 status event(s) for Second campaign.');
-  assert.equal(elements.evidence.children[0].children.length, 2);
-  assert.equal(elements.evidence.children[0].children[1].children[0].textContent, '2');
-  assert.equal(elements.history.children[0].children.length, 2);
-  assert.equal(elements.history.children[0].children[1].children[0].textContent, '2');
+  assert.equal(elements.evidence.children[0].children[0].children.length, 2);
+  assert.equal(elements.evidence.children[0].children[0].children[1].children[0].textContent, '2');
+  assert.equal(elements.history.children[0].children[0].children.length, 2);
+  assert.equal(elements.history.children[0].children[0].children[1].children[0].textContent, '2');
 
   elements.bundleFile.files = [{ error: new Error('Rejected invalid bundle') }];
   elements.bundleFile.listeners.change();
   assert.equal(elements.importStatus.textContent, 'Rejected invalid bundle');
-  assert.strictEqual(elements.campaigns.children[0].children[1], loadedRow);
+  assert.strictEqual(elements.campaigns.children[0].children[0].children[1], loadedRow);
   assert.equal(elements.clearBundle.disabled, false);
-  assert.equal(elements.evidence.children[0].children[1].children[0].textContent, '2');
+  assert.equal(elements.evidence.children[0].children[0].children[1].children[0].textContent, '2');
 
   elements.clearBundle.click();
   assert.equal(elements.importStatus.textContent, 'No bundle loaded. Your file stays on this device.');
