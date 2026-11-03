@@ -114,7 +114,9 @@
     const previousStatus = campaign.status;
     campaign.status = 'UNVERIFIED';
     campaign.reasons = [...campaign.reasons, 'Offline companion edit; desktop review required.'];
-    const nextHistoryId = bundle.resources.statusHistory.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
+    const historyIds = new Set(bundle.resources.statusHistory.map(entry => entry.id));
+    let nextHistoryId = 1;
+    while (historyIds.has(nextHistoryId)) nextHistoryId += 1;
     bundle.resources.statusHistory.push({
       id: nextHistoryId,
       campaignId,

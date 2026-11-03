@@ -6,6 +6,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const root = path.join(__dirname, '..');
+
 class Element {
   constructor(tag = '', document = null) {
     this.tag = tag;
@@ -35,7 +37,7 @@ class Element {
 }
 
 test('campaign search and filter scope local records and invalid bundles preserve the current view', () => {
-  const ids = ['bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns', 'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus', 'evidence', 'history', 'clearBundle'];
+  const ids = ['bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns', 'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus', 'evidence', 'history', 'clearBundle', 'campaignEditor', 'campaignEditorForm', 'cancelEdit', 'exportBundle', 'draftStatus', 'editorStatus'];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const document = {
     getElementById: id => elements[id],
@@ -46,6 +48,8 @@ test('campaign search and filter scope local records and invalid bundles preserv
     isSecureContext: false,
     navigator: {},
     PromoGuardBundle: {
+      cloneBundle: value => value,
+      editedBundle: value => value,
       parseFile(file, callback) {
         callback(file.error || null, file.data || null);
       }

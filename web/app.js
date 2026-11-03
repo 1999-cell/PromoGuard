@@ -192,7 +192,9 @@
   function exportWorkingCopy() {
     if (!bundle || !dirty) return;
     try {
-      const output = JSON.stringify(bundle, null, 2);
+      const outputBundle = window.PromoGuardBundle.cloneBundle(bundle);
+      outputBundle.exportedAt = new Date().toISOString();
+      const output = JSON.stringify(window.PromoGuardBundle.validateBundle(outputBundle), null, 2);
       const blob = new Blob([output], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

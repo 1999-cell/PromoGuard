@@ -27,7 +27,7 @@ const fixture = () => ({
   contractVersion: 1,
   exportedAt: '2026-11-03T00:00:00.000Z',
   readOnly: true,
-  resources: { campaigns: [campaign], evidence: [], statusHistory: [] }
+  resources: { campaigns: [JSON.parse(JSON.stringify(campaign))], evidence: [], statusHistory: [] }
 });
 
 test('web bundle parser accepts valid JSON and contract objects', () => {

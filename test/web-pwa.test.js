@@ -25,7 +25,8 @@ function runApp({ protocol, hostname, isSecureContext, register }) {
   const ids = [
     'bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns',
     'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus',
-    'evidence', 'history', 'clearBundle'
+    'evidence', 'history', 'clearBundle', 'campaignEditor', 'campaignEditorForm',
+    'cancelEdit', 'exportBundle', 'draftStatus', 'editorStatus'
   ];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const document = {
@@ -44,7 +45,11 @@ function runApp({ protocol, hostname, isSecureContext, register }) {
         }
       }
     },
-    PromoGuardBundle: { parseFile: (_file, callback) => callback(null, null) }
+    PromoGuardBundle: {
+      cloneBundle: value => value,
+      editedBundle: value => value,
+      parseFile: (_file, callback) => callback(null, null)
+    }
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'web', 'app.js'), 'utf8'), { document, window });
   return { elements, calls };

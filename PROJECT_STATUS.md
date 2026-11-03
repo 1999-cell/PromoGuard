@@ -24,7 +24,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 | Predictions (Paper) | Inactive placeholder; no live odds, money, prizes, points or payouts |
 | Windows packaging | NSIS build configured and verified in an alternate output directory; unsigned and not installed on a clean profile |
 | Backup/restore | Implemented: JSON export/import includes archived campaigns, evidence revisions, status history, and validated app settings; scheduled-fetch consent is reset |
-| Offline web companion | Implemented as a source-only local read-only bundle viewer with campaign search, per-campaign evidence/history filtering, and an HTTPS/localhost-only installable PWA shell; not included in the Windows installer; no login, sync, or network API |
+| Offline web companion | Implemented as a source-only local bundle companion with search, evidence/history filtering, limited in-memory edits and new-bundle export; edits reset status to Unverified and preserve evidence/hashes; imported data is not persisted or cached; PWA shell requires HTTPS/localhost |
 
 ## Fixes completed in this audit
 
@@ -44,6 +44,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 - Exposed campaign results as a named screen-reader list and added a concise live announcement for search/filter result counts, including no-match states.
 - Grouped Overview campaign counts as a named list of four metrics for assistive technology.
 - Added descriptive text alternatives and expandable, header-labeled data tables for each Analytics chart.
+- Added offline web editing for descriptive campaign fields and archive state in a separate in-memory copy; export creates a new bundle, preserves the import and evidence hashes, and forces edited campaign status to Unverified.
 - Added an Electron acceptance scan requiring accessible names on all visible, enabled form controls and buttons across the eight views.
 - Replaced chained browser prompts for campaign edits with a labeled, keyboard-friendly dialog; edits can clear optional values and return the campaign to review.
 - Exposed Activity notifications, alerts, and receipt records as named lists, with a separate polite announcement when a notification is dismissed; Activity data refreshes when revisiting its view.
