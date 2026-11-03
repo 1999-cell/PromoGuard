@@ -27,7 +27,7 @@ The actual package version is `0.1.0`. The older implementation plan/PDFs contai
 | Surface | What is implemented | Important limitation |
 |---|---|---|
 | Overview | Persisted campaign summary, recent records, safety messages and shortcuts | Counts are local records, not earnings or wallet balances |
-| PromoGuard | Add/review campaign records, inspect status/reasons, search/filter, provide evidence URL and separate attestations, save immutable user-pasted terms snapshots with SHA-256 revision history | Snapshots are user-provided, not fetched or independently verified; source allow-list and user assertions do not certify a campaign |
+| PromoGuard | Add/review/edit campaign records, inspect status/reasons, search/filter, provide evidence URL and separate attestations, save immutable user-pasted terms snapshots with SHA-256 revision history | Edits use a labeled dialog and return the record to review; snapshots are user-provided, not fetched or independently verified; source allow-list and user assertions do not certify a campaign |
 | Discover leads | Add/remove feeds, run discovery, deduplicate parsed items, consent to scheduled checks | Leads remain unverified; live feed reliability and external social discovery are not certified |
 | Markets | Honest provider-not-configured state | No price provider, chart or current market data |
 | Predictions (Paper) | Clearly inactive/demo placeholder | No active odds/outcomes, money, prizes, redeemable points or payouts |

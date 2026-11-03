@@ -72,6 +72,60 @@
     return bundle;
   }
 
+  function cloneBundle(input) {
+    return JSON.parse(JSON.stringify(validateBundle(input)));
+  }
+
+  function editedBundle(input, campaignId, changes, editedAt) {
+    const bundle = cloneBundle(input);
+    if (!Number.isSafeInteger(campaignId) || !changes || typeof changes !== 'object' || Array.isArray(changes)) invalidBundle();
+    const allowed = new Set(['name', 'publisher', 'network', 'tokenId', 'rewardAmount', 'endDate', 'archived']);
+    if (Object.keys(changes).length === 0 || Object.keys(changes).some(key => !allowed.has(key))) invalidBundle();
+    const campaign = bundle.resources.campaigns.find(item => item.id === campaignId);
+    if (!campaign) invalidBundle();
+
+    const stringFields = { publisher: 200, network: 80, tokenId: 256, endDate: 32 };
+    if (Object.hasOwn(changes, 'name')) {
+      if (typeof changes.name !== 'string' || !changes.name.trim() || changes.name.trim().length > 200) invalidBundle();
+      campaign.name = changes.name.trim();
+    }
+    for (const [field, maxLength] of Object.entries(stringFields)) {
+      if (!Object.hasOwn(changes, field)) continue;
+      const value = changes[field];
+      if (value !== null && (typeof value !== 'string' || value.length > maxLength)) invalidBundle();
+      campaign[field] = typeof value === 'string' && value.trim() ? value.trim() : null;
+    }
+    if (Object.hasOwn(changes, 'endDate') && campaign.endDate !== null) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(campaign.endDate);
+      if (!match) invalidBundle();
+      const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+      if (date.toISOString().slice(0, 10) !== campaign.endDate) invalidBundle();
+    }
+    if (Object.hasOwn(changes, 'rewardAmount')) {
+      const amount = changes.rewardAmount;
+      if (amount !== null && (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0)) invalidBundle();
+      campaign.rewardAmount = amount;
+    }
+    if (Object.hasOwn(changes, 'archived')) {
+      if (typeof changes.archived !== 'boolean') invalidBundle();
+      campaign.archived = changes.archived;
+    }
+
+    const previousStatus = campaign.status;
+    campaign.status = 'UNVERIFIED';
+    campaign.reasons = [...campaign.reasons, 'Offline companion edit; desktop review required.'];
+    const nextHistoryId = bundle.resources.statusHistory.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
+    bundle.resources.statusHistory.push({
+      id: nextHistoryId,
+      campaignId,
+      fromStatus: previousStatus,
+      toStatus: 'UNVERIFIED',
+      reason: 'Offline companion edit; desktop review required.',
+      occurredAt: editedAt
+    });
+    return validateBundle(bundle);
+  }
+
   function parseFile(file, callback) {
     if (!file || file.size > MAX_BUNDLE_BYTES) {
       callback(new Error(`Choose a JSON bundle no larger than ${MAX_BUNDLE_BYTES / 1024 / 1024} MB.`));
@@ -86,7 +140,7 @@
     reader.readAsText(file);
   }
 
-  const api = Object.freeze({ MAX_BUNDLE_BYTES, validateBundle, parseFile });
+  const api = Object.freeze({ MAX_BUNDLE_BYTES, validateBundle, cloneBundle, editedBundle, parseFile });
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PromoGuardBundle = api;
 })(typeof globalThis === 'undefined' ? this : globalThis);

@@ -226,10 +226,10 @@ app.whenReady().then(() => {
     const updates = [];
     const values = [];
     if (changes.name !== undefined) { if (typeof changes.name !== 'string' || !changes.name.trim() || changes.name.length > 200) throw new Error('invalid name'); updates.push('name=?'); values.push(changes.name.trim()); }
-    if (changes.network !== undefined) { updates.push('network=?'); values.push(typeof changes.network === 'string' ? changes.network : null); }
-    if (changes.tokenId !== undefined) { updates.push('token_id=?'); values.push(typeof changes.tokenId === 'string' ? changes.tokenId : null); }
-    if (changes.rewardAmount !== undefined) { if (typeof changes.rewardAmount !== 'number' || !isFinite(changes.rewardAmount) || changes.rewardAmount < 0) throw new Error('invalid reward amount'); updates.push('reward_amount=?'); values.push(changes.rewardAmount); }
-    if (changes.endDate !== undefined) { updates.push('end_date=?'); values.push(typeof changes.endDate === 'string' ? changes.endDate : null); }
+    if (changes.network !== undefined) { if (changes.network !== null && (typeof changes.network !== 'string' || changes.network.length > 80)) throw new Error('invalid network'); updates.push('network=?'); values.push(typeof changes.network === 'string' && changes.network.trim() ? changes.network.trim() : null); }
+    if (changes.tokenId !== undefined) { if (changes.tokenId !== null && (typeof changes.tokenId !== 'string' || changes.tokenId.length > 256)) throw new Error('invalid token ID'); updates.push('token_id=?'); values.push(typeof changes.tokenId === 'string' && changes.tokenId.trim() ? changes.tokenId.trim() : null); }
+    if (changes.rewardAmount !== undefined) { if (changes.rewardAmount !== null && (typeof changes.rewardAmount !== 'number' || !isFinite(changes.rewardAmount) || changes.rewardAmount < 0)) throw new Error('invalid reward amount'); updates.push('reward_amount=?'); values.push(changes.rewardAmount); }
+    if (changes.endDate !== undefined) { if (changes.endDate !== null && (typeof changes.endDate !== 'string' || changes.endDate.length > 32)) throw new Error('invalid end date'); updates.push('end_date=?'); values.push(typeof changes.endDate === 'string' && changes.endDate ? changes.endDate : null); }
     if (updates.length === 0) throw new Error('no changes provided');
     updates.push('last_checked=?'); values.push(now());
     values.push(id);
@@ -652,15 +652,17 @@ app.whenReady().then(() => {
         document.querySelector('[data-view="'+name+'"]').click();
         await new Promise(resolve=>setTimeout(resolve,30));
         const panel=document.querySelector('[data-view-panel="'+name+'"]');
-        const controls=[...panel.querySelectorAll('input:not([type="hidden"]),select,textarea,button')].filter(control=>control.getClientRects().length>0&&!control.disabled);
-        o.accessibleControlsByView[name]=controls.filter(control=>{
+        const allControls=[...panel.querySelectorAll('input:not([type="hidden"]),select,textarea,button')];
+        const controls=allControls.filter(control=>!control.disabled&&!control.closest('[hidden]'));
+        const missing=controls.filter(control=>{
           const named=control.matches('button')
             ? Boolean(control.getAttribute('aria-label')||control.getAttribute('title')||control.textContent.trim())
             : Boolean(control.getAttribute('aria-label')||control.getAttribute('aria-labelledby')||control.labels?.length);
           return !named;
-        }).map(control=>`${control.tagName.toLowerCase()}${control.id?`#${control.id}`:''}`);
+        }).map(control=>control.tagName.toLowerCase()+(control.id?'#'+control.id:''));
+        o.accessibleControlsByView[name]={panelHidden:panel.hidden,total:allControls.length,enabled:controls.length,missing};
       }
-      o.visibleControlsNamed=Object.values(o.accessibleControlsByView).every(missing=>missing.length===0);
+      o.visibleControlsNamed=Object.values(o.accessibleControlsByView).every(result=>!result.panelHidden&&result.missing.length===0);
       document.querySelector('[data-view="markets"]').click();
       o.marketsNavigation=!document.querySelector('#view-markets').hidden&&document.querySelector('#pageTitle').textContent==='Markets';
       o.marketsHeadingFocus=document.activeElement===document.querySelector('#view-markets h1')&&document.querySelector('#view-markets h1').tabIndex===-1;
@@ -682,12 +684,50 @@ app.whenReady().then(() => {
         o.mobileViewFocus=document.activeElement===document.querySelector('#view-wallets h1')
       }
       try{const a=await pg.addCampaign({name:'t',sourceUrl:'https://ton.org/a'});o.add=a.status;o.dup=(await pg.addCampaign({name:'t',sourceUrl:'https://ton.org/a/?utm_source=x'})).duplicate;
+        document.getElementById('campaignSearch').dispatchEvent(new Event('input'));
+        for(let i=0;i<40&&!document.querySelector('#list button[aria-label="Edit t"]');i++)await new Promise(resolve=>setTimeout(resolve,25));
+        document.querySelector('#list button[aria-label="Edit t"]').click();
+        const editor=document.getElementById('editCampaignDialog'),editForm=document.getElementById('editCampaignForm');
+        o.campaignEditDialogAccessible=editor.open&&editor.getAttribute('aria-labelledby')==='editCampaignTitle'&&[...editForm.querySelectorAll('label')].every(label=>label.querySelector('span')?.textContent.trim()&&label.querySelector('input')?.labels?.length);
+        editForm.elements.namedItem('name').value='Edited smoke campaign';
+        editForm.elements.namedItem('network').value='ton-testnet';
+        editForm.elements.namedItem('tokenId').value='ton:native';
+        editForm.elements.namedItem('rewardAmount').value='1';
+        editForm.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+        for(let i=0;i<40&&(await pg.listCampaigns())[0]?.name!=='Edited smoke campaign';i++)await new Promise(resolve=>setTimeout(resolve,25));
+        const edited=(await pg.listCampaigns())[0];
+        o.campaignEditSaved=edited?.name==='Edited smoke campaign'&&edited.network==='ton-testnet'&&edited.token_id==='ton:native'&&edited.reward_amount===1&&editor.open===false;
+        for(let i=0;i<40&&!document.querySelector('#list button[aria-label="Edit Edited smoke campaign"]');i++)await new Promise(resolve=>setTimeout(resolve,25));
+        document.querySelector('#list button[aria-label="Edit Edited smoke campaign"]').click();
+        editForm.elements.namedItem('network').value='';
+        editForm.elements.namedItem('tokenId').value='';
+        editForm.elements.namedItem('rewardAmount').value='';
+        editForm.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+        for(let i=0;i<40&&(await pg.listCampaigns())[0]?.reward_amount!==null;i++)await new Promise(resolve=>setTimeout(resolve,25));
+        const cleared=(await pg.listCampaigns())[0];
+        o.campaignEditClearsOptional=cleared?.network===null&&cleared.token_id===null&&cleared.reward_amount===null;
         await pg.reviewStart(a.id);o.review=(await pg.listCampaigns())[0].status;
         await pg.archiveCampaign(a.id,true);o.archived=(await pg.listCampaigns()).length===0&&(await pg.listArchivedCampaigns()).some(c=>c.id===a.id);
         await pg.archiveCampaign(a.id,false);
         let proof={evidenceUrl:'https://ton.org/terms',confirmFree:true,rewardAmount:1,tokenId:'ton:native'};
         o.sourceUnverified=(await pg.reviewEvidence(a.id,proof)).status;
         o.snapshot=(await pg.saveCampaignTermsSnapshot(a.id,'https://ton.org/terms','No payment is required.')).contentHash.length===64;
+        document.querySelector('[data-view="analytics"]').click();
+        for(let i=0;i<40&&!document.getElementById('chartStatusSummary').textContent.includes('Under review');i++)await new Promise(resolve=>setTimeout(resolve,25));
+        const chartIds=['chartStatus','chartNetwork','chartFlags','chartHistory','chartRewards'];
+        o.analyticsChartsAccessible=chartIds.every(id=>{
+          const chart=document.getElementById(id);
+          const description=document.getElementById(chart.getAttribute('aria-describedby'));
+          return chart.getAttribute('role')==='img'&&Boolean(chart.getAttribute('aria-label'))&&Boolean(description&&description.textContent.trim());
+        });
+        o.analyticsChartDataTable=chartIds.every(id=>{
+          const details=document.querySelector('#'+id+'Table')?.closest('details');
+          const table=document.querySelector('#'+id+'Table table');
+          const empty=document.querySelector('#'+id+'Table .empty');
+          return Boolean(details&&details.querySelector('summary')?.textContent.trim()&&
+            ((table&&table.querySelector('caption')&&table.querySelector('th[scope="col"]')&&table.querySelector('th[scope="row"]'))||
+              (empty&&empty.textContent.trim())));
+        })&&Boolean(document.querySelector('#chartStatusTable table caption')?.textContent==='Campaigns by status'&&document.querySelector('#chartStatusSummary').textContent.includes('Under review'));
         document.querySelector('[data-view="promoguard"]').click();
         document.getElementById('campaignSearch').dispatchEvent(new Event('input'));
         for(let i=0;i<40&&document.querySelector('#campaignListStatus')?.textContent!=='Showing 1 of 1 campaign record.';i++)await new Promise(resolve=>setTimeout(resolve,25));
@@ -743,22 +783,32 @@ app.whenReady().then(() => {
       try{
         const n=await pg.notificationsAdd('smoke',null,'Smoke notification message');
         o.notificationMessage=(await pg.notificationsList()).find(x=>x.id===n.id).message==='Smoke notification message';
-        o.notificationDismissed=(await pg.notificationsDismiss(n.id)).id===n.id
+        document.querySelector('[data-view="activity"]').click();
+        for(let i=0;i<40&&!document.querySelector('#notifications [role="listitem"] button');i++)await new Promise(resolve=>setTimeout(resolve,25));
+        const notificationList=document.querySelector('#notifications');
+        const notificationItem=[...notificationList.querySelectorAll('[role="listitem"]')].find(item=>item.textContent.includes('Smoke notification message'));
+        o.notificationListAccessible=notificationList.getAttribute('role')==='list'&&notificationList.getAttribute('aria-label')==='Notifications'&&Boolean(notificationItem);
+        notificationItem.querySelector('button').click();
+        for(let i=0;i<40&&!document.querySelector('#notificationsStatus')?.textContent.includes('dismissed');i++)await new Promise(resolve=>setTimeout(resolve,25));
+        o.notificationDismissed=(await pg.notificationsList()).find(x=>x.id===n.id).dismissed===1;
+        o.notificationDismissAnnounced=document.querySelector('#notificationsStatus')?.getAttribute('role')==='status'&&document.querySelector('#notificationsStatus').textContent==='Notification smoke dismissed.'
       }catch(e){o.notification='ERR '+e.message}
       o.signApi=Object.keys(pg).filter(k=>/^(sign|signData|send|sendTransaction|approve|approveToken|transfer|transferFrom|requestTransaction)$/i.test(k)).length;
       o.inline=await new Promise(r=>{window.__x=0;const s=document.createElement('script');s.textContent='window.__x=1';document.head.append(s);setTimeout(()=>r(window.__x===1?'RAN':'blocked'),200)});
       return o})()`);
     const required = ['pg','node','offlineWebBundleApi','styled','viewCount','navigationTargets','noHorizontalOverflow','previewNoticeHidden','appErrorHidden',
-      'dashboardStatsList','visibleControlsNamed','marketsNavigation','marketsHeadingFocus','activeNavigation','analyticsNavigation','analyticsFlags','analyticsActivity','overviewNavigation','add','dup','review','archived','sourceUnverified','snapshot','sourceAttested','preflightSnapshot','badDomain','domainAdded','domainRemoved',
+      'dashboardStatsList','visibleControlsNamed','marketsNavigation','marketsHeadingFocus','activeNavigation','analyticsNavigation','analyticsFlags','analyticsActivity','analyticsChartsAccessible','analyticsChartDataTable','overviewNavigation','add','dup','campaignEditDialogAccessible','campaignEditSaved','campaignEditClearsOptional','review','archived','sourceUnverified','snapshot','sourceAttested','preflightSnapshot','badDomain','domainAdded','domainRemoved',
       'campaignListAnnounced','campaignResultsList','campaignEmptyListItem','campaignEmptyAnnounced','snapshotRevisionLabels','reviewControlsLabeled','snapshotComparisonAnnounced','diffRowsAccessible','badfeed','badmanifest','ton','refresh','wc','badpid','wcrefresh','wcbad','minRewardDefault','minRewardSaved','feedAdded','feedRemoved',
-      'scheduleDisabled','notificationMessage','notificationDismissed','signApi','inline'];
+      'scheduleDisabled','notificationMessage','notificationListAccessible','notificationDismissed','notificationDismissAnnounced','signApi','inline'];
     const checks = { pg: r.pg === 'object', node: r.node === 'undefinedundefined', offlineWebBundleApi: r.offlineWebBundleApi, styled: r.styled,
       viewCount: r.viewCount === 8, navigationTargets: r.navigationTargets, noHorizontalOverflow: r.noHorizontalOverflow,
       previewNoticeHidden: r.previewNoticeHidden, appErrorHidden: r.appErrorHidden, marketsNavigation: r.marketsNavigation,
       dashboardStatsList: r.dashboardStatsList,
       visibleControlsNamed: r.visibleControlsNamed,
       marketsHeadingFocus: r.marketsHeadingFocus, activeNavigation: r.activeNavigation,
+      analyticsChartsAccessible: r.analyticsChartsAccessible, analyticsChartDataTable: r.analyticsChartDataTable,
       analyticsNavigation: r.analyticsNavigation, overviewNavigation: r.overviewNavigation, add: r.add === 'UNVERIFIED', dup: r.dup, review: r.review === 'UNDER_REVIEW',
+      campaignEditDialogAccessible: r.campaignEditDialogAccessible, campaignEditSaved: r.campaignEditSaved, campaignEditClearsOptional: r.campaignEditClearsOptional,
       analyticsFlags: r.analyticsFlags, analyticsActivity: r.analyticsActivity,
       archived: r.archived,
       sourceUnverified: r.sourceUnverified === 'UNDER_REVIEW', snapshot: r.snapshot, sourceAttested: r.sourceAttested === 'ELIGIBLE_FOR_REVIEW',
@@ -776,7 +826,8 @@ app.whenReady().then(() => {
       wc: r.wc === 'disconnected/pid=false', badpid: r.badpid === 'rejected', wcrefresh: r.wcrefresh === 'refused',
       wcbad: r.wcbad === 'rejected', minRewardDefault: r.minRewardDefault === 0.01, minRewardSaved: r.minRewardSaved,
       feedAdded: r.feedAdded, feedRemoved: r.feedRemoved, scheduleDisabled: r.scheduleDisabled,
-      notificationMessage: r.notificationMessage, notificationDismissed: r.notificationDismissed, signApi: r.signApi === 0, inline: r.inline === 'blocked' };
+      notificationMessage: r.notificationMessage, notificationListAccessible: r.notificationListAccessible,
+      notificationDismissed: r.notificationDismissed, notificationDismissAnnounced: r.notificationDismissAnnounced, signApi: r.signApi === 0, inline: r.inline === 'blocked' };
     const failed = required.filter(k => checks[k] !== true);
     if (process.env.PG_SMOKE_WIDTH && Number(process.env.PG_SMOKE_WIDTH) <= 760) {
       if (!r.mobileMenuExpanded) failed.push('mobileMenuExpanded');

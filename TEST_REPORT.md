@@ -47,7 +47,10 @@ The commands were run sequentially with `PG_SMOKE=1`, first at 390px and then at
 - Mobile navigation opens with focus in the menu, closes on Escape and restores focus to its toggle, and moves focus to the selected view heading.
 - Campaign results expose a named list with list items; search and status/archive filtering announce matching record counts and empty results through a polite live region.
 - Overview campaign totals are exposed as a named list with four metric items.
+- Analytics canvases have accessible names/descriptions and expandable data tables with row/column headers; smoke checks verify populated chart data against a local campaign fixture.
 - Campaign add, duplicate detection, review transitions, separate source attestation, and domain validation.
+- Campaign editing through the accessible dialog, including saving fields and clearing optional values.
+- Activity notifications, alerts, and receipt records are exposed as named lists; dismissing a notification announces the action without making the whole list a live region.
 - Terms snapshot save/hash, labeled review-form controls and revision-comparison selectors, announced comparison results with accessible added/removed line labels, and preflight loading the matching persisted snapshot rather than renderer-supplied terms.
 - Analytics view navigation plus working flags/activity queries; archived records are available through the archive-inclusive API.
 - Unsafe feed/manifest URLs and invalid WalletConnect project IDs are rejected.

@@ -111,6 +111,17 @@
             <p id="campaignListStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
             <div id="list" class="campaign-list" role="list" aria-label="Campaign search results"><p class="empty-state" role="listitem">No campaigns yet. Add one from its official terms or discover a lead below.</p></div>
           </section>
+          <dialog id="editCampaignDialog" class="edit-dialog" aria-labelledby="editCampaignTitle">
+            <form id="editCampaignForm" class="form-grid">
+              <div class="panel-heading full-width"><div><p class="eyebrow">LOCAL CAMPAIGN RECORD</p><h2 id="editCampaignTitle">Edit campaign</h2><p class="section-description">Changing campaign details returns it to review. Saved terms evidence is retained as history but may no longer match.</p></div></div>
+              <label class="field full-width"><span>Name</span><input name="name" required maxlength="200" autocomplete="off"></label>
+              <label class="field"><span>Network</span><input name="network" maxlength="80" autocomplete="off"></label>
+              <label class="field"><span>Token ID</span><input name="tokenId" maxlength="256" autocomplete="off"></label>
+              <label class="field"><span>Published reward amount</span><input name="rewardAmount" type="number" step="any" min="0"></label>
+              <label class="field"><span>End date</span><input name="endDate" type="date"></label>
+              <div class="form-actions full-width"><button class="button button-primary" type="submit">Save changes</button><button id="cancelCampaignEdit" class="button button-secondary" type="button">Cancel</button><p id="editCampaignStatus" class="form-status" role="status" aria-live="polite"></p></div>
+            </form>
+          </dialog>
 
           <section class="panel" aria-labelledby="discovery-title">
             <div class="panel-heading"><div><p class="eyebrow">OPTIONAL PUBLIC FEEDS</p><h2 id="discovery-title">Discover campaign leads</h2><p class="section-description">You approve each manual run. Discovered records always start unverified.</p></div></div>
@@ -183,9 +194,9 @@
         <section class="view" id="view-activity" data-view-panel="activity" aria-labelledby="activity-title" hidden>
           <div class="page-heading"><div><p class="eyebrow">LOCAL AUDIT TRAIL</p><h1 id="activity-title">Activity</h1><p class="page-subtitle">Review local activity counters, notifications, alerts, and claim-preflight records.</p></div></div>
           <section class="panel"><div id="health" role="status" aria-live="polite"></div></section>
-          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">LOCAL UPDATES</p><h2>Notifications</h2></div></div><div id="notifications" role="status" aria-live="polite"></div></section>
-          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">REVIEW ITEMS</p><h2>Alerts</h2></div></div><div id="alerts" role="status" aria-live="polite"></div></section>
-          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">NO CLAIM CONFIRMATION IMPLIED</p><h2>Receipts &amp; claim records</h2></div></div><div id="receipts" role="status" aria-live="polite"></div></section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">LOCAL UPDATES</p><h2>Notifications</h2></div></div><div id="notifications" role="list" aria-label="Notifications"></div><p id="notificationsStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p></section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">REVIEW ITEMS</p><h2>Alerts</h2></div></div><div id="alerts" role="list" aria-label="Alerts"></div></section>
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">NO CLAIM CONFIRMATION IMPLIED</p><h2>Receipts &amp; claim records</h2></div></div><div id="receipts" role="list" aria-label="Receipts and claim records"></div></section>
         </section>
 
         <section class="view" id="view-analytics" data-view-panel="analytics" aria-labelledby="analytics-title" hidden>
@@ -196,24 +207,34 @@
             <div id="analyticsOverviewStats" class="stat-grid"></div>
             <div style="margin-top:16px; display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
               <div style="min-width:0;">
-                <canvas id="chartStatus" width="400" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+                <canvas id="chartStatus" role="img" aria-label="Campaign counts by status chart" aria-describedby="chartStatusSummary" width="400" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+                <p id="chartStatusSummary" class="chart-summary"></p>
+                <details class="chart-data"><summary>View campaign status data table</summary><div id="chartStatusTable"></div></details>
               </div>
               <div style="min-width:0;">
-                <canvas id="chartNetwork" width="400" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+                <canvas id="chartNetwork" role="img" aria-label="Campaign counts by network chart" aria-describedby="chartNetworkSummary" width="400" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+                <p id="chartNetworkSummary" class="chart-summary"></p>
+                <details class="chart-data"><summary>View campaign network data table</summary><div id="chartNetworkTable"></div></details>
               </div>
             </div>
           </section>
           <section class="panel">
             <div class="panel-heading"><div><p class="eyebrow">PAYMENT CONDITIONS</p><h2>Payment flags across tracked campaigns</h2></div></div>
-            <canvas id="chartFlags" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+            <canvas id="chartFlags" role="img" aria-label="Payment condition flags chart" aria-describedby="chartFlagsSummary" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+            <p id="chartFlagsSummary" class="chart-summary"></p>
+            <details class="chart-data"><summary>View payment condition data table</summary><div id="chartFlagsTable"></div></details>
           </section>
           <section class="panel">
             <div class="panel-heading"><div><p class="eyebrow">ACTIVITY OVER TIME</p><h2>Status changes per day</h2></div></div>
-            <canvas id="chartHistory" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+            <canvas id="chartHistory" role="img" aria-label="Daily campaign status changes chart" aria-describedby="chartHistorySummary" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+            <p id="chartHistorySummary" class="chart-summary"></p>
+            <details class="chart-data"><summary>View daily status-change data table</summary><div id="chartHistoryTable"></div></details>
           </section>
           <section class="panel">
             <div class="panel-heading"><div><p class="eyebrow">STATED REWARD AMOUNTS</p><h2>Reward histogram (stated token units)</h2></div></div>
-            <canvas id="chartRewards" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+            <canvas id="chartRewards" role="img" aria-label="Stated campaign reward amount histogram" aria-describedby="chartRewardsSummary" width="900" height="260" style="width:100%; height:260px; background: var(--surface-raised); border:1px solid var(--line-soft); border-radius:10px;"></canvas>
+            <p id="chartRewardsSummary" class="chart-summary"></p>
+            <details class="chart-data"><summary>View stated reward data table</summary><div id="chartRewardsTable"></div></details>
             <div id="analyticsRewardsNote" class="note" style="margin-top:10px;"></div>
           </section>
         </section>

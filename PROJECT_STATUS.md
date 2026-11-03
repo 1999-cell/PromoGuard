@@ -43,7 +43,10 @@ The application does not trade, sign, approve, send transactions, submit claims,
 - Made snapshot-comparison updates live-announced, with semantic list items labeled as added, removed, or unchanged for assistive technology.
 - Exposed campaign results as a named screen-reader list and added a concise live announcement for search/filter result counts, including no-match states.
 - Grouped Overview campaign counts as a named list of four metrics for assistive technology.
+- Added descriptive text alternatives and expandable, header-labeled data tables for each Analytics chart.
 - Added an Electron acceptance scan requiring accessible names on all visible, enabled form controls and buttons across the eight views.
+- Replaced chained browser prompts for campaign edits with a labeled, keyboard-friendly dialog; edits can clear optional values and return the campaign to review.
+- Exposed Activity notifications, alerts, and receipt records as named lists, with a separate polite announcement when a notification is dismissed; Activity data refreshes when revisiting its view.
 - Updated Electron to 45 and Electron Builder to 26.18, upgraded `better-sqlite3` to its Node-API prebuild release, and disabled unnecessary native rebuilds. This avoids the previous Electron/native-module ABI mismatch and builds without requiring local Visual Studio C++ tools.
 - Switched OS-backed wallet storage to Electron's asynchronous safe-storage API, removing the Electron 45 deprecation warning.
 - Corrected the Windows packaging configuration and made the builder use the installed Electron distribution, avoiding an observed Windows archive rename/lock failure.
