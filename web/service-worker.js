@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'promoguard-offline-v1';
+const CACHE_NAME = 'promoguard-offline-v3';
 const SHELL_ASSETS = [
   './',
   './index.html',

@@ -20,6 +20,8 @@ if (!window.pg) {
       panel.hidden = !active;
       panel.classList.toggle('active', active);
     });
+    const heading = document.querySelector(`[data-view-panel="${name}"] h1`);
+    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
     document.querySelectorAll('[data-view]').forEach(item => {
       const active = item.dataset.view === name;
       item.classList.toggle('active', active);
@@ -28,7 +30,9 @@ if (!window.pg) {
     });
     document.getElementById('pageTitle').textContent = { overview: 'Overview', promoguard: 'PromoGuard', markets: 'Markets', predictions: 'Predictions (Paper)', wallets: 'Wallet Center', activity: 'Activity', analytics: 'Analytics', settings: 'Settings & AI' }[name] || 'Overview';
     document.body.classList.remove('sidebar-open');
-    document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
+    const toggle = document.getElementById('navToggle');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
     document.getElementById('mobileBackdrop').hidden = true;
   }));
   document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListener('click', event => {
@@ -39,12 +43,24 @@ if (!window.pg) {
   toggle.addEventListener('click', () => {
     const open = document.body.classList.toggle('sidebar-open');
     toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
     backdrop.hidden = !open;
+    if (open) document.querySelector('.primary-nav [data-view]')?.focus();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !document.body.classList.contains('sidebar-open')) return;
+    document.body.classList.remove('sidebar-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
+    backdrop.hidden = true;
+    toggle.focus();
   });
   backdrop.addEventListener('click', () => {
     document.body.classList.remove('sidebar-open');
     toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open navigation');
     backdrop.hidden = true;
+    toggle.focus();
   });
   return;
 }
@@ -79,6 +95,8 @@ function setView(name) {
     panel.hidden = !active;
     panel.classList.toggle('active', active);
   });
+  const heading = document.querySelector(`[data-view-panel="${name}"] h1`);
+  if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
   document.querySelectorAll('[data-view]').forEach(button => {
     const active = button.dataset.view === name;
     button.classList.toggle('active', active);
@@ -87,10 +105,13 @@ function setView(name) {
   });
   document.getElementById('pageTitle').textContent = viewNames[name];
   document.body.classList.remove('sidebar-open');
-  document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
+  const toggle = document.getElementById('navToggle');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open navigation');
   document.getElementById('mobileBackdrop').hidden = true;
   clearAppError();
   if (name === 'analytics') renderAnalytics();
+  if (name === 'activity') { renderHealth(); renderNotifications(); renderAlerts(); renderReceipts(); }
 }
 document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
 document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListener('click', event => {
@@ -100,12 +121,26 @@ document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListe
 document.getElementById('navToggle').addEventListener('click', () => {
   const open = document.body.classList.toggle('sidebar-open');
   document.getElementById('navToggle').setAttribute('aria-expanded', String(open));
+  document.getElementById('navToggle').setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
   document.getElementById('mobileBackdrop').hidden = !open;
+  if (open) document.querySelector('.primary-nav [data-view]')?.focus();
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !document.body.classList.contains('sidebar-open')) return;
+  document.body.classList.remove('sidebar-open');
+  const toggle = document.getElementById('navToggle');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open navigation');
+  document.getElementById('mobileBackdrop').hidden = true;
+  toggle.focus();
 });
 document.getElementById('mobileBackdrop').addEventListener('click', () => {
   document.body.classList.remove('sidebar-open');
-  document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
+  const toggle = document.getElementById('navToggle');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open navigation');
   document.getElementById('mobileBackdrop').hidden = true;
+  toggle.focus();
 });
 const FLAGS = ['requiresDeposit','requiresGas','requiresPurchase','requiresStaking','requiresPaidMint','requiresSendingFunds','requiresUnlimitedApproval','requestsSeedPhrase','unclearSignature','unverifiedSite'];
 function reviewForm(r) {
@@ -171,7 +206,12 @@ function reviewForm(r) {
     if (snapshots.length >= 2) selB.value = snapshots[1].id;
     const cmpBtn = Object.assign(el('button', 'button button-secondary', 'Compare revisions'), { type: 'button' });
     const diffResult = el('div', 'diff-result');
-    diffSection.append(diffTitle, diffNote, el('div', '', selA), el('div', '', selB), cmpBtn, diffResult);
+    diffResult.setAttribute('role', 'status');
+    diffResult.setAttribute('aria-live', 'polite');
+    diffResult.setAttribute('aria-atomic', 'true');
+    const revisionALabel = el('label', 'field'); revisionALabel.append(el('span', '', 'Earlier revision'), selA);
+    const revisionBLabel = el('label', 'field'); revisionBLabel.append(el('span', '', 'Later revision'), selB);
+    diffSection.append(diffTitle, diffNote, revisionALabel, revisionBLabel, cmpBtn, diffResult);
     history.append(diffSection);
 
     cmpBtn.addEventListener('click', async () => {
@@ -186,9 +226,13 @@ function reviewForm(r) {
           el('span', '', ` +${result.summary.added} / -${result.summary.removed} lines, ${result.summary.unchanged} unchanged`));
         diffResult.append(summary);
         const diffTable = el('div', 'diff-table');
+        diffTable.setAttribute('role', 'list');
         result.diff.forEach(op => {
           const row = el('div', `diff-row diff-${op.type}`);
+          row.setAttribute('role', 'listitem');
+          row.setAttribute('aria-label', `${op.type === 'added' ? 'Added' : op.type === 'removed' ? 'Removed' : 'Unchanged'} line: ${op.line || 'blank line'}`);
           const marker = el('span', 'diff-marker', op.type === 'added' ? '+' : op.type === 'removed' ? '-' : ' ');
+          marker.setAttribute('aria-hidden', 'true');
           const content = el('span', 'diff-content', op.line);
           row.append(marker, content);
           diffTable.append(row);
@@ -286,13 +330,64 @@ async function renderClaims() {
     });
   }
 }
+const editCampaignDialog = document.getElementById('editCampaignDialog');
+const editCampaignForm = document.getElementById('editCampaignForm');
+let editingCampaignId = null;
+let campaignEditorTrigger = null;
+function openCampaignEditor(campaign) {
+  editingCampaignId = campaign.id;
+  campaignEditorTrigger = document.activeElement;
+  const form = editCampaignForm.elements;
+  form.namedItem('name').value = campaign.name || '';
+  form.namedItem('network').value = campaign.network || '';
+  form.namedItem('tokenId').value = campaign.token_id || '';
+  form.namedItem('rewardAmount').value = campaign.reward_amount ?? '';
+  form.namedItem('endDate').value = campaign.end_date || '';
+  document.getElementById('editCampaignStatus').textContent = '';
+  editCampaignDialog.showModal();
+  form.namedItem('name').focus();
+}
+document.getElementById('cancelCampaignEdit').addEventListener('click', () => editCampaignDialog.close());
+editCampaignDialog.addEventListener('close', () => {
+  editingCampaignId = null;
+  if (campaignEditorTrigger?.isConnected) campaignEditorTrigger.focus();
+  campaignEditorTrigger = null;
+});
+editCampaignForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!Number.isSafeInteger(editingCampaignId)) return;
+  const form = new FormData(editCampaignForm);
+  const reward = form.get('rewardAmount');
+  const changes = {
+    name: String(form.get('name') || ''),
+    network: String(form.get('network') || '').trim() || null,
+    tokenId: String(form.get('tokenId') || '').trim() || null,
+    rewardAmount: reward === '' ? null : Number(reward),
+    endDate: String(form.get('endDate') || '') || null
+  };
+  const submit = editCampaignForm.querySelector('[type="submit"]');
+  submit.disabled = true;
+  try {
+    const result = await pg.editCampaign(editingCampaignId, changes);
+    say('result', `Campaign updated. Status: ${LABEL[result.status] || result.status}${result.reasons.length ? ' · ' + result.reasons.join(', ') : ''}`);
+    editCampaignDialog.close();
+    await render();
+    const heading = document.getElementById('campaigns-title');
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+  } catch (error) {
+    document.getElementById('editCampaignStatus').textContent = `Campaign could not be updated: ${error.message || 'try again.'}`;
+  } finally {
+    submit.disabled = false;
+  }
+});
 async function render() {
   const showArchived = document.getElementById('showArchived')?.checked === true;
   const rows = await (showArchived ? pg.listArchivedCampaigns() : pg.listCampaigns()), box = document.getElementById('list');
   const n = statuses => rows.filter(r => statuses.includes(r.status)).length;
   const tally = document.getElementById('tally'); tally.replaceChildren();
   [['Campaigns tracked', rows.length, ''], ['Eligible for review', n(['ELIGIBLE_FOR_REVIEW']), 'stat-accent'], ['Under review', n(['UNDER_REVIEW']), ''], ['Rejected', n(['REJECTED', 'INELIGIBLE']), 'stat-danger']].forEach(([k, v, tone]) => {
-    const d = el('div', 'stat-card'); d.append(el('b', tone, v), el('span', '', k)); tally.append(d); });
+    const d = el('div', 'stat-card'); d.setAttribute('role', 'listitem'); d.append(el('b', tone, v), el('span', '', k)); tally.append(d); });
 
   const recent = document.getElementById('overview-recent');
   recent.replaceChildren();
@@ -314,14 +409,20 @@ async function render() {
     const searchMatch = !search || [r.name, r.description, r.source_url, r.network, r.token_id].some(value => String(value || '').toLowerCase().includes(search));
     return statusMatch && searchMatch;
   });
+  const listStatus = document.getElementById('campaignListStatus');
+  const statusText = `Showing ${filtered.length} of ${rows.length} campaign record${rows.length === 1 ? '' : 's'}.${filtered.length ? '' : ' No records match the selected filters.'}`;
+  if (listStatus.textContent !== statusText) listStatus.textContent = statusText;
   box.replaceChildren();
   if (!filtered.length) {
-    box.append(el('p', 'empty-state', rows.length ? 'No campaigns match these filters.' : 'No campaigns yet. Add one from its official terms or discover a lead below.'));
+    const emptyResult = el('p', 'empty-state', rows.length ? 'No campaigns match these filters.' : 'No campaigns yet. Add one from its official terms or discover a lead below.');
+    emptyResult.setAttribute('role', 'listitem');
+    box.append(emptyResult);
     renderClaims();
     return;
   }
   box.replaceChildren(...filtered.map(r => {
     const d = el('div', 'row ' + cls(r.status));
+    d.setAttribute('role', 'listitem');
     d.append(el('div', 'tag', `${r.name}: ${LABEL[r.status] || r.status}`),
       el('div', '', `${r.network || 'no network'}, ${r.reward_amount ?? 'amount not published'} ${r.token_id || ''}, ends ${r.end_date || 'unknown'}`),
       el('div', '', `Reasons: ${safeReasons(r.reasons).join(', ') || 'none recorded'}`),
@@ -332,17 +433,7 @@ async function render() {
     if (r.status === 'UNDER_REVIEW') d.append(reviewForm(r));
     if (['UNVERIFIED', 'UNDER_REVIEW', 'ELIGIBLE_FOR_REVIEW'].includes(r.status)) { const b = el('button', '', 'Reject'); b.onclick = async () => { await pg.reviewReject(r.id, 'rejected by user'); render(); }; d.append(b); }
     if (r.status === 'ELIGIBLE_FOR_REVIEW') d.append(claimForm(r));
-    const editB = el('button', 'button-quiet', 'Edit'); editB.onclick = async () => {
-      const name = prompt('Campaign name', r.name || ''); if (name === null) return;
-      const network = prompt('Network', r.network || ''); if (network === null) return;
-      const tokenId = prompt('Token ID', r.token_id || ''); if (tokenId === null) return;
-      const reward = prompt('Reward amount', r.reward_amount ?? ''); if (reward === null) return;
-      const endDate = prompt('End date (YYYY-MM-DD)', r.end_date || ''); if (endDate === null) return;
-      try {
-        const res = await pg.editCampaign(r.id, { name: name || undefined, network: network || undefined, tokenId: tokenId || undefined, rewardAmount: reward === '' ? undefined : Number(reward), endDate: endDate || undefined });
-        say('result', `Campaign updated. Status: ${res.status}${res.reasons.length ? ' · ' + res.reasons.join(', ') : ''}`); render();
-      } catch (error) { showAppError(`Edit failed: ${error.message || 'try again.'}`); }
-    }; d.append(editB);
+    const editB = el('button', 'button-quiet', 'Edit'); editB.setAttribute('aria-label', `Edit ${r.name}`); editB.onclick = () => openCampaignEditor(r); d.append(editB);
     const archB = el('button', 'button-quiet', r.archived ? 'Unarchive' : 'Archive'); archB.onclick = async () => {
       try { await pg.archiveCampaign(r.id, !r.archived); say('result', `Campaign ${r.archived ? 'unarchived' : 'archived'}.`); render(); } catch (error) { showAppError(`Archive failed: ${error.message || 'try again.'}`); }
     }; d.append(archB);
@@ -476,7 +567,8 @@ async function renderWc() {
   if (!st.accounts.length) { box.append(el('p', 'note', 'The wallet shared no supported account. Reconnect and approve a supported network.')); return; }
   const sel = st.accounts.find(a => a.network === st.selected); wcAddr = sel.address;
   const pick = Object.assign(el('select'), {}); st.accounts.forEach(a => pick.append(Object.assign(el('option'), { value: a.network, textContent: `${a.name}${a.testnet ? ' (test)' : ''}` }))); pick.value = st.selected;
-  pick.onchange = async () => { await pg.wcSelect(pick.value); renderWc(); }; box.append(pick, el('div', '', `Address: ${sel.address}`), el('small', '', `Network ${sel.network}. ${st.persistentSession ? 'Session stored with OS encryption.' : 'Session kept in memory only.'}`));
+  const networkLabel = el('label', 'field'); networkLabel.append(el('span', '', 'Wallet network'), pick);
+  pick.onchange = async () => { await pg.wcSelect(pick.value); renderWc(); }; box.append(networkLabel, el('div', '', `Address: ${sel.address}`), el('small', '', `Network ${sel.network}. ${st.persistentSession ? 'Session stored with OS encryption.' : 'Session kept in memory only.'}`));
   if (!st.rpcConfigured) { box.append(el('p', 'note', 'No RPC provider is configured for this network. Add one above to read balances.')); return; }
   if (!st.dataConsent) { box.append(el('p', 'empty', 'Balance lookups are off. Allow them to send your public address to the RPC provider.')); return; }
   if (!data || !data.snapshot) { box.append(el('p', 'empty', 'No data yet. Press Refresh.')); return; }
@@ -620,28 +712,55 @@ async function renderHealth() {
 async function renderNotifications() {
   const ns = await pg.notificationsList(), box = document.getElementById('notifications');
   box.replaceChildren();
-  if (!ns.length) { box.append(el('p', 'empty', 'No notifications.')); return; }
+  if (!ns.length) { const empty = el('p', 'empty', 'No notifications.'); empty.setAttribute('role', 'listitem'); box.append(empty); return; }
   ns.forEach(n => {
     const d = el('div', 'row ' + (n.dismissed ? 'rejected' : 'unverified'));
+    d.setAttribute('role', 'listitem');
     d.append(el('div', 'tag', `${n.kind} (ref ${n.ref_id || '-'})`), el('div', '', n.message || 'No message was recorded for this older notification.'), el('small', '', `${n.shown_at} ${n.dismissed ? '[dismissed]' : ''}`));
-    if (!n.dismissed) { const b = el('button', '', 'Dismiss'); b.onclick = async () => { await pg.notificationsDismiss(n.id); renderNotifications(); }; d.append(b); }
+    if (!n.dismissed) { const b = el('button', '', 'Dismiss'); b.onclick = async () => { await pg.notificationsDismiss(n.id); document.getElementById('notificationsStatus').textContent = `Notification ${n.kind} dismissed.`; renderNotifications(); }; d.append(b); }
     box.append(d);
   });
 }
 async function renderAlerts() {
   const as = await pg.alertsList(), box = document.getElementById('alerts');
   box.replaceChildren();
-  if (!as.length) { box.append(el('p', 'empty', 'No alerts.')); return; }
-  as.forEach(a => box.append(el('div', 'row unverified', `${a.kind}: ${a.message}`)));
+  if (!as.length) { const empty = el('p', 'empty', 'No alerts.'); empty.setAttribute('role', 'listitem'); box.append(empty); return; }
+  as.forEach(a => { const item = el('div', 'row unverified', `${a.kind}: ${a.message}`); item.setAttribute('role', 'listitem'); box.append(item); });
 }
 async function renderReceipts() {
   const rs = await pg.receiptsList(), box = document.getElementById('receipts');
   box.replaceChildren();
-  if (!rs.length) { box.append(el('p', 'empty', 'No claims yet.')); return; }
-  rs.forEach(r => box.append(el('div', 'row ' + cls(r.state), `${r.name}: ${LABEL[r.state] || r.state} — ${r.network}, amount ${r.reward_amount ?? 'n/a'}, tx ${r.tx_hash || 'none'}`)));
+  if (!rs.length) { const empty = el('p', 'empty', 'No claims yet.'); empty.setAttribute('role', 'listitem'); box.append(empty); return; }
+  rs.forEach(r => { const item = el('div', 'row ' + cls(r.state), `${r.name}: ${LABEL[r.state] || r.state} — ${r.network}, amount ${r.reward_amount ?? 'n/a'}, tx ${r.tx_hash || 'none'}`); item.setAttribute('role', 'listitem'); box.append(item); });
 }
 renderHealth(); renderNotifications(); renderAlerts(); renderReceipts(); renderAnalytics();
-})();
+
+function renderChartData(summaryId, tableId, label, entries, emptyMessage) {
+  const summary = document.getElementById(summaryId);
+  const tableContainer = document.getElementById(tableId);
+  if (!entries.length) {
+    summary.textContent = emptyMessage;
+    tableContainer.replaceChildren(el('p', 'empty', emptyMessage));
+    return;
+  }
+  summary.textContent = `${label}: ${entries.map(([key, value]) => `${key}, ${value}`).join('; ')}.`;
+  const table = el('table');
+  table.append(el('caption', '', label));
+  const head = el('tr');
+  for (const heading of ['Category', 'Count']) {
+    const th = el('th', '', heading);
+    th.scope = 'col';
+    head.append(th);
+  }
+  table.append(head);
+  entries.forEach(([key, value]) => {
+    const row = el('tr');
+    row.append(el('th', '', key), el('td', '', value));
+    row.children[0].scope = 'row';
+    table.append(row);
+  });
+  tableContainer.replaceChildren(table);
+}
 
 async function renderAnalytics() {
   try {
@@ -675,20 +794,30 @@ async function renderAnalytics() {
       DISCOVERED: '#74a9ff', AWAITING_USER_APPROVAL: '#74a9ff', CLAIM_SUBMITTED: '#74a9ff',
       REWARD_PENDING: '#f2bd65', REWARD_RECEIVED: '#54d5a0', FAILED: '#ff7b80'
     }, 'Campaign status');
+    const statusEntries = Object.entries(byStatus).filter(([, value]) => value > 0).map(([key, value]) => [LABEL[key] || key, value]);
+    renderChartData('chartStatusSummary', 'chartStatusTable', 'Campaigns by status', statusEntries, 'No campaign records are available for this chart.');
 
     const byNetwork = overview.byNetwork || {};
     drawDonut('chartNetwork', byNetwork, {
       'ton-testnet': '#40c9b0', 'ton-mainnet': '#20aa96', 'eip155:1': '#74a9ff',
       'eip155:56': '#f2bd65', 'eip155:97': '#f2bd65', 'eip155:11155111': '#74a9ff'
     }, 'Network');
+    renderChartData('chartNetworkSummary', 'chartNetworkTable', 'Campaigns by network', Object.entries(byNetwork).filter(([, value]) => value > 0), 'No network records are available for this chart.');
 
     drawBars('chartFlags', flags || {}, 'Payment condition flags', v => v > 0 ? '#ff7b80' : '#27384a');
+    const flagEntries = Object.entries(flags || {}).filter(([, value]) => value > 0).map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').replace(/^./, char => char.toUpperCase()), value]);
+    renderChartData('chartFlagsSummary', 'chartFlagsTable', 'Campaigns with payment-condition flags', flagEntries, 'No payment-condition flags are recorded.');
 
-    drawHistory('chartHistory', (history && history.daily) || [], 'Status changes per day');
+    const daily = (history && history.daily) || [];
+    drawHistory('chartHistory', daily, 'Status changes per day');
+    renderChartData('chartHistorySummary', 'chartHistoryTable', 'Status changes per day', daily.filter(([, value]) => value > 0), 'No status changes are recorded for the chart period.');
 
-    drawRewardHistogram('chartRewards', (rewards && rewards.bins) || [], 'Stated reward amount histogram (bins of 5 token units)');
+    const bins = (rewards && rewards.bins) || [];
+    drawRewardHistogram('chartRewards', bins, 'Stated reward amount histogram (bins of 5 token units)');
+    renderChartData('chartRewardsSummary', 'chartRewardsTable', 'Campaign counts by stated-reward range (token units)', bins.filter(([, value]) => value > 0), 'No stated reward amounts are available for this chart.');
   } catch (error) {
     console.error('Analytics failed:', error);
+    showAppError(`Analytics could not be loaded: ${error.message || 'unknown error'}`);
   }
 }
 
@@ -718,6 +847,7 @@ function donutSegments(values) {
 function drawDonut(id, values, colorMap, title) {
   const { ctx, w, h } = fitCanvas(document.getElementById(id));
   clearCanvas(ctx, w, h);
+  const total = Object.values(values).reduce((sum, value) => sum + value, 0);
   const cx = w / 2, cy = h / 2 - 8, outerR = Math.min(w, h) / 2 - 22, innerR = outerR * 0.52;
   const segs = donutSegments(values);
   if (segs.length === 0) { ctx.fillStyle = '#71839a'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('No data', cx, cy + 4); return; }
@@ -786,3 +916,4 @@ function drawRewardHistogram(id, bins, title) {
     ctx.fillStyle = '#edf3f8'; ctx.font = '10px system-ui'; ctx.fillText(String(v), x + barW / 2, y - 6);
   });
 }
+})();

@@ -24,7 +24,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 | Predictions (Paper) | Inactive placeholder; no live odds, money, prizes, points or payouts |
 | Windows packaging | NSIS build configured and verified in an alternate output directory; unsigned and not installed on a clean profile |
 | Backup/restore | Implemented: JSON export/import includes archived campaigns, evidence revisions, status history, and validated app settings; scheduled-fetch consent is reset |
-| Offline web companion | Implemented as a source-only local read-only bundle viewer with campaign search, per-campaign evidence/history filtering, and an HTTPS/localhost-only installable PWA shell; not included in the Windows installer; no login, sync, or network API |
+| Offline web companion | Implemented as a source-only local bundle companion with search, evidence/history filtering, limited in-memory edits, local Unverified draft creation and new-bundle export; drafts have null policy flags/no evidence and require desktop review; modified working copies require discard confirmation; imported data is not persisted or cached; PWA shell requires HTTPS/localhost |
 
 ## Fixes completed in this audit
 
@@ -38,6 +38,18 @@ The application does not trade, sign, approve, send transactions, submit claims,
 - Corrected feed removal/listing, scheduled-discovery status, minimum-reward settings, and the UI path for revoking wallet lookup consent.
 - Scoped wallet-data erasure to the selected provider and revoked related lookup permissions. Encrypted session and project-ID erasure remains a separate provider action.
 - Removed a manual "record health check" control that created a timestamp without checking a service. The Activity view now describes local activity counters and explicitly says external services are not checked there.
+- Labeled dynamically rendered snapshot comparison and WalletConnect network selectors so assistive technology can identify their purpose.
+- Improved keyboard navigation: mobile menu focus is managed on open, selection, and Escape; view changes move focus to the destination heading.
+- Made snapshot-comparison updates live-announced, with semantic list items labeled as added, removed, or unchanged for assistive technology.
+- Exposed campaign results as a named screen-reader list and added a concise live announcement for search/filter result counts, including no-match states.
+- Grouped Overview campaign counts as a named list of four metrics for assistive technology.
+- Added descriptive text alternatives and expandable, header-labeled data tables for each Analytics chart.
+- Added offline web editing for descriptive campaign fields and archive state in a separate in-memory copy; export creates a new bundle, preserves the import and evidence hashes, and forces edited campaign status to Unverified.
+- Added local draft campaigns to the offline companion with collision-safe IDs, unknown policy assertions, no evidence, a desktop-review warning and a status-history event; drafts export only as part of a separate validated working-copy bundle.
+- Added an accessible confirmation before clearing or replacing a modified offline working copy; cancelling preserves edits and replacement files are validated before the prompt.
+- Added an Electron acceptance scan requiring accessible names on all visible, enabled form controls and buttons across the eight views.
+- Replaced chained browser prompts for campaign edits with a labeled, keyboard-friendly dialog; edits can clear optional values and return the campaign to review.
+- Exposed Activity notifications, alerts, and receipt records as named lists, with a separate polite announcement when a notification is dismissed; Activity data refreshes when revisiting its view.
 - Updated Electron to 45 and Electron Builder to 26.18, upgraded `better-sqlite3` to its Node-API prebuild release, and disabled unnecessary native rebuilds. This avoids the previous Electron/native-module ABI mismatch and builds without requiring local Visual Studio C++ tools.
 - Switched OS-backed wallet storage to Electron's asynchronous safe-storage API, removing the Electron 45 deprecation warning.
 - Corrected the Windows packaging configuration and made the builder use the installed Electron distribution, avoiding an observed Windows archive rename/lock failure.
@@ -48,9 +60,10 @@ The application does not trade, sign, approve, send transactions, submit claims,
 
 See [TEST_REPORT.md](./TEST_REPORT.md) for exact commands and results. The latest recorded checks are:
 
-- `npm test`: 164 passed, 0 failed, including DNS policy/pinning, redirect validation, backup round-trip/invalid-input, offline web UI, and secure-origin PWA coverage.
-- JavaScript syntax checks: all 62 project JavaScript files passed.
-- Electron smoke checks at 390px and 1180px: exited 0 with `failed:[]`.
+- `npm test`: 170 passed, 0 failed after local-draft and unsaved-change-confirmation coverage.
+- Focused offline companion tests: 14 passed, 0 failed; web app and bundle JavaScript syntax checks and `git diff --check` passed.
+- JavaScript syntax checks: all 57 project JavaScript files passed; local tooling, dependency, and generated build folders were excluded.
+- Electron smoke checks at 390px (previous recorded run) and 1180px (current run): exited 0 with `failed:[]`.
 - Direct local web preview: synthetic bundle import, campaign search, and evidence/history filtering passed.
 - Current Windows NSIS packaging build: succeeded to a temporary directory; package is unsigned and has no configured author or app icon.
 - Dependency audit: the last recorded `npm audit` and production-only audit reported zero advisories on 2026-10-26; they were not rerun in this audit.

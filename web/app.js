@@ -13,7 +13,20 @@
   const evidence = document.getElementById('evidence');
   const history = document.getElementById('history');
   const clearButton = document.getElementById('clearBundle');
+  const editor = document.getElementById('campaignEditor');
+  const editorForm = document.getElementById('campaignEditorForm');
+  const draftDialog = document.getElementById('draftCampaignDialog');
+  const draftForm = document.getElementById('draftCampaignForm');
+  const exportButton = document.getElementById('exportBundle');
+  const discardDialog = document.getElementById('discardChangesDialog');
+  let importedBundle = null;
   let bundle = null;
+  let dirty = false;
+  let editingCampaignId = null;
+  let editorTrigger = null;
+  let draftTrigger = null;
+  let pendingDiscard = null;
+  let discardTrigger = null;
 
   function text(tag, value, className) {
     const node = document.createElement(tag);
@@ -26,8 +39,21 @@
     container.replaceChildren(text('p', message, 'empty'));
   }
 
+  function tableRegion(table, label) {
+    const region = document.createElement('div');
+    region.className = 'table-scroll';
+    region.setAttribute('role', 'region');
+    region.setAttribute('aria-label', `${label}; scroll horizontally to view all columns`);
+    region.tabIndex = 0;
+    region.append(table);
+    return region;
+  }
+
   function clear() {
+    importedBundle = null;
     bundle = null;
+    dirty = false;
+    editingCampaignId = null;
     picker.value = '';
     status.textContent = 'No bundle loaded. Your file stays on this device.';
     summary.replaceChildren();
@@ -43,6 +69,49 @@
     empty(evidence, 'Evidence revisions appear after a bundle is imported.');
     empty(history, 'Status history appears after a bundle is imported.');
     clearButton.disabled = true;
+    exportButton.disabled = true;
+    document.getElementById('addDraftCampaign').disabled = true;
+    document.getElementById('draftStatus').textContent = 'Edits are unavailable until a bundle is imported.';
+    if (editor.open) editor.close();
+    if (draftDialog.open) draftDialog.close();
+  }
+
+  function requestDiscard(action) {
+    pendingDiscard = action;
+    discardTrigger = document.activeElement;
+    document.getElementById('discardChangesMessage').textContent = action.type === 'clear'
+      ? 'Your working copy has edits that have not been exported. Clearing will discard them.'
+      : 'Your working copy has edits that have not been exported. Loading this bundle will discard them.';
+    discardDialog.showModal();
+    document.getElementById('keepLocalEdits').focus();
+  }
+
+  function cancelDiscard() {
+    pendingDiscard = null;
+    discardDialog.close();
+    if (discardTrigger?.isConnected) discardTrigger.focus();
+    discardTrigger = null;
+  }
+
+  function confirmDiscard() {
+    const action = pendingDiscard;
+    pendingDiscard = null;
+    discardDialog.close();
+    if (action?.type === 'clear') clear();
+    else if (action?.type === 'import') parseSelectedFile(action.file, show);
+    if (discardTrigger?.isConnected) discardTrigger.focus();
+    discardTrigger = null;
+  }
+
+  function parseSelectedFile(file, onValid) {
+    status.textContent = 'Validating selected bundle…';
+    window.PromoGuardBundle.parseFile(file, (error, data) => {
+      if (error) {
+        status.textContent = error.message;
+        return;
+      }
+      onValid(data);
+    });
   }
 
   function renderCampaigns(resources) {
@@ -58,8 +127,13 @@
       return;
     }
     const table = document.createElement('table');
+    table.setAttribute('aria-label', 'Campaign search results');
     const head = document.createElement('tr');
-    ['Campaign', 'Status', 'Network', 'Reward', 'Archived', 'Reasons'].forEach(label => head.append(text('th', label)));
+    ['Campaign', 'Status', 'Network', 'Reward', 'Archived', 'Reasons', 'Local copy'].forEach(label => {
+      const heading = text('th', label);
+      heading.scope = 'col';
+      head.append(heading);
+    });
     table.append(head);
     visible.forEach(item => {
       const row = document.createElement('tr');
@@ -67,23 +141,36 @@
         item.name, item.status, item.network, item.rewardAmount,
         item.archived ? 'Yes' : 'No', item.reasons.join('; ') || 'None recorded'
       ].forEach(value => row.append(text('td', value)));
+      const actionCell = document.createElement('td');
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.textContent = 'Edit copy';
+      edit.setAttribute('aria-label', `Edit local copy of ${item.name}`);
+      edit.addEventListener('click', () => openEditor(item, edit));
+      actionCell.append(edit);
+      row.append(actionCell);
       table.append(row);
     });
-    campaigns.replaceChildren(table);
+    campaigns.replaceChildren(tableRegion(table, 'Campaign search results'));
   }
 
-  function renderList(container, entries, columns, emptyMessage) {
+  function renderList(container, entries, columns, emptyMessage, label) {
     if (!entries.length) { empty(container, emptyMessage); return; }
     const table = document.createElement('table');
+    table.setAttribute('aria-label', label);
     const head = document.createElement('tr');
-    columns.forEach(([, label]) => head.append(text('th', label)));
+    columns.forEach(([, label]) => {
+      const heading = text('th', label);
+      heading.scope = 'col';
+      head.append(heading);
+    });
     table.append(head);
     entries.forEach(entry => {
       const row = document.createElement('tr');
       columns.forEach(([key]) => row.append(text('td', entry[key])));
       table.append(row);
     });
-    container.replaceChildren(table);
+    container.replaceChildren(tableRegion(table, label));
   }
 
   function renderRelatedRecords() {
@@ -99,18 +186,17 @@
       : `Showing ${visibleEvidence.length} evidence revision(s) and ${visibleHistory.length} status event(s) across all campaigns.`;
     renderList(evidence, visibleEvidence, [
       ['campaignId', 'Campaign ID'], ['url', 'Evidence URL'], ['fetchedAt', 'Captured'], ['contentHash', 'SHA-256'], ['note', 'Provenance note'], ['content', 'Text snapshot']
-    ], 'No evidence revisions match this campaign.');
+    ], 'No evidence revisions match this campaign.', 'Evidence revisions');
     renderList(history, visibleHistory, [
       ['campaignId', 'Campaign ID'], ['fromStatus', 'From'], ['toStatus', 'To'], ['reason', 'Reason'], ['occurredAt', 'When']
-    ], 'No status history matches this campaign.');
+    ], 'No status history matches this campaign.', 'Status history');
   }
 
-  function show(data) {
-    bundle = data;
-    const items = data.resources;
+  function renderBundle() {
+    const items = bundle.resources;
     summary.replaceChildren(
       text('p', `${items.campaigns.length} campaign(s), ${items.evidence.length} evidence revision(s), ${items.statusHistory.length} status event(s).`),
-      text('p', `Exported ${data.exportedAt}. Read-only snapshot; not synced.`)
+      text('p', `Imported ${importedBundle.exportedAt}. The selected file is unchanged; working edits exist only in memory.`)
     );
     campaignSearch.value = '';
     campaignSearch.disabled = items.campaigns.length === 0;
@@ -125,8 +211,54 @@
     campaignFilter.value = 'all';
     campaignFilter.disabled = items.campaigns.length === 0;
     renderRelatedRecords();
+  }
+
+  function show(data) {
+    importedBundle = data;
+    bundle = window.PromoGuardBundle.cloneBundle(data);
+    dirty = false;
+    renderBundle();
     status.textContent = 'Bundle loaded locally. No network request was made.';
+    document.getElementById('draftStatus').textContent = 'No edits yet. Edit a local copy to create a separate export.';
+    exportButton.disabled = true;
     clearButton.disabled = false;
+    document.getElementById('addDraftCampaign').disabled = false;
+  }
+
+  function openEditor(campaign, trigger) {
+    editingCampaignId = campaign.id;
+    editorTrigger = trigger;
+    editorForm.elements.namedItem('name').value = campaign.name || '';
+    editorForm.elements.namedItem('publisher').value = campaign.publisher || '';
+    editorForm.elements.namedItem('network').value = campaign.network || '';
+    editorForm.elements.namedItem('tokenId').value = campaign.tokenId || '';
+    editorForm.elements.namedItem('rewardAmount').value = campaign.rewardAmount ?? '';
+    editorForm.elements.namedItem('endDate').value = campaign.endDate || '';
+    editorForm.elements.namedItem('archived').checked = campaign.archived;
+    document.getElementById('editorStatus').textContent = `Editing ${campaign.name}. This does not change the imported file.`;
+    editor.showModal();
+    editorForm.elements.namedItem('name').focus();
+  }
+
+  function exportWorkingCopy() {
+    if (!bundle || !dirty) return;
+    try {
+      const outputBundle = window.PromoGuardBundle.cloneBundle(bundle);
+      outputBundle.exportedAt = new Date().toISOString();
+      const output = JSON.stringify(window.PromoGuardBundle.validateBundle(outputBundle), null, 2);
+      const blob = new Blob([output], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'promoguard-offline-working-copy.json';
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      status.textContent = 'A new edited bundle was prepared for download. The imported file remains unchanged.';
+    } catch (error) {
+      status.textContent = `The edited bundle could not be exported: ${error.message || 'unknown error'}`;
+    }
   }
 
   function registerOfflineShell() {
@@ -155,21 +287,99 @@
   picker.addEventListener('change', () => {
     const file = picker.files && picker.files[0];
     if (!file) return;
-    status.textContent = 'Validating selected bundle…';
-    window.PromoGuardBundle.parseFile(file, (error, data) => {
-      if (error) {
-        status.textContent = error.message;
-        clearButton.disabled = false;
-        return;
-      }
-      show(data);
-    });
+    picker.value = '';
+    if (dirty) requestDiscard({ type: 'import', file });
+    else parseSelectedFile(file, show);
   });
   campaignSearch.addEventListener('input', () => {
     if (bundle) renderCampaigns(bundle.resources.campaigns);
   });
   campaignFilter.addEventListener('change', renderRelatedRecords);
-  clearButton.addEventListener('click', clear);
+  clearButton.addEventListener('click', () => {
+    if (dirty) requestDiscard({ type: 'clear' });
+    else clear();
+  });
+  document.getElementById('keepLocalEdits').addEventListener('click', cancelDiscard);
+  document.getElementById('confirmDiscardLocalEdits').addEventListener('click', confirmDiscard);
+  discardDialog.addEventListener('cancel', event => {
+    event.preventDefault();
+    cancelDiscard();
+  });
+  document.getElementById('cancelEdit').addEventListener('click', () => editor.close());
+  document.getElementById('addDraftCampaign').addEventListener('click', () => {
+    if (!bundle) return;
+    draftTrigger = document.activeElement;
+    draftForm.reset();
+    document.getElementById('draftCampaignStatus').textContent = '';
+    draftDialog.showModal();
+    draftForm.elements.namedItem('name').focus();
+  });
+  document.getElementById('cancelDraftCampaign').addEventListener('click', () => draftDialog.close());
+  draftDialog.addEventListener('close', () => {
+    if (draftTrigger?.isConnected) draftTrigger.focus();
+    draftTrigger = null;
+  });
+  draftForm.addEventListener('submit', event => {
+    event.preventDefault();
+    if (!bundle) return;
+    const form = new FormData(draftForm);
+    const reward = form.get('rewardAmount');
+    const draft = {
+      name: String(form.get('name') || ''),
+      publisher: String(form.get('publisher') || '').trim() || null,
+      network: String(form.get('network') || '').trim() || null,
+      tokenId: String(form.get('tokenId') || '').trim() || null,
+      rewardAmount: reward === '' ? null : Number(reward),
+      endDate: String(form.get('endDate') || '') || null
+    };
+    try {
+      bundle = window.PromoGuardBundle.createdDraftBundle(bundle, draft, new Date().toISOString());
+      dirty = true;
+      campaignSearch.value = '';
+      campaignFilter.value = 'all';
+      renderBundle();
+      draftDialog.close();
+      clearButton.disabled = false;
+      exportButton.disabled = false;
+      document.getElementById('draftStatus').textContent = 'Local draft added to the in-memory working copy as Unverified. Policy assertions are unknown; desktop review is required. Export creates a new file.';
+      status.textContent = 'Unverified draft added locally. The imported file is unchanged; review this draft in PromoGuard desktop.';
+    } catch (error) {
+      document.getElementById('draftCampaignStatus').textContent = `Draft was not added: ${error.message || 'invalid campaign fields.'}`;
+    }
+  });
+  editor.addEventListener('close', () => {
+    editingCampaignId = null;
+    if (editorTrigger && editorTrigger.isConnected) editorTrigger.focus();
+    editorTrigger = null;
+  });
+  editorForm.addEventListener('submit', event => {
+    event.preventDefault();
+    if (!bundle || !Number.isSafeInteger(editingCampaignId)) return;
+    const form = new FormData(editorForm);
+    const reward = form.get('rewardAmount');
+    const changes = {
+      name: String(form.get('name') || ''),
+      publisher: String(form.get('publisher') || '').trim() || null,
+      network: String(form.get('network') || '').trim() || null,
+      tokenId: String(form.get('tokenId') || '').trim() || null,
+      rewardAmount: reward === '' ? null : Number(reward),
+      endDate: String(form.get('endDate') || '') || null,
+      archived: editorForm.elements.namedItem('archived').checked
+    };
+    try {
+      bundle = window.PromoGuardBundle.editedBundle(bundle, editingCampaignId, changes, new Date().toISOString());
+      dirty = true;
+      editor.close();
+      renderCampaigns(bundle.resources.campaigns);
+      renderRelatedRecords();
+      exportButton.disabled = false;
+      document.getElementById('draftStatus').textContent = 'Working copy changed in memory. All edits mark the campaign Unverified; export creates a new file. Nothing is saved by this page.';
+      status.textContent = 'Working copy updated. Imported file and evidence revisions remain unchanged.';
+    } catch (error) {
+      document.getElementById('editorStatus').textContent = `Changes were not applied: ${error.message || 'invalid campaign fields.'}`;
+    }
+  });
+  exportButton.addEventListener('click', exportWorkingCopy);
   clear();
   registerOfflineShell();
 })();

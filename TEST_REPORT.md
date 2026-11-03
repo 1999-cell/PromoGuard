@@ -6,10 +6,12 @@ Updated: 2026-11-03
 
 | Check | Result | Scope |
 |---|---|---|
-| `npm test` | PASS: 164 passed, 0 failed (2026-11-03) | Electron Node test runner; provider/wallet/network behavior is mocked |
-| JavaScript syntax | PASS: 62 files (2026-11-03) | Main, preload, renderer, source, web client and tests |
+| `npm test` | PASS: 170 passed, 0 failed (current working tree) | Electron Node test runner; provider/wallet/network behavior is mocked |
+| JavaScript syntax | PASS: 57 files (2026-11-03) | Main, preload, renderer, source, web client and tests; local tooling/dependency/build folders excluded |
 | Electron smoke at 390px | PASS, exit 0, `failed:[]` (2026-11-03) | Eight views, Analytics APIs, archived listing, renderer isolation, review/evidence, and safety gates |
-| Electron smoke at 1180px | PASS, exit 0, `failed:[]` (2026-11-03) | Same checks at desktop width |
+| Electron smoke at 1180px | PASS, exit 0, `failed:[]` (current working tree) | Same checks at desktop width |
+| Focused offline companion tests | PASS: 14 passed, 0 failed (current working tree) | Bundle validation/draft creation, UI edits/export, discard confirmation and PWA shell |
+| Web syntax and diff checks | PASS (current working tree) | `node --check web\app.js`, `node --check web\bundle.js`, `git diff --check` |
 | Offline web preview | PASS (2026-11-03) | Direct local preview imported a synthetic bundle; search and campaign evidence/history filtering worked |
 | Offline PWA shell | PASS (2026-11-03) | HTTPS/localhost registration guards, secure-origin-only service worker handling, static-shell cache allow-list, and PWA manifest/icons covered by focused tests; no mobile-device install acceptance |
 | Windows NSIS build | PASS (2026-11-03) | Current source packaged to a temporary directory outside the repository; temporary output removed after verification |
@@ -17,7 +19,7 @@ Updated: 2026-11-03
 
 ## Test coverage
 
-Run with `npm test` (`node test/run.js`), which launches the suite under Electron's Node runtime. The 161 tests cover:
+Run with `npm test` (`node test/run.js`), which launches the suite under Electron's Node runtime. The 170 tests cover:
 
 - Campaign payment assertions, source attestation, status transitions, date-only expiry, and zero-reward handling.
 - Database initialization and append-only migrations, data preservation, parameterized input storage, and notification-message persistence.
@@ -27,7 +29,9 @@ Run with `npm test` (`node test/run.js`), which launches the suite under Electro
 - Claim preflight, missing-terms behavior, payment checks, network mismatch, and conservative receipt attribution.
 - User-pasted terms snapshot validation, maximum size, safe HTTPS URL checks, immutable SHA-256 revisions, duplicate handling, and matching-snapshot review gating.
 - Backup export/import round-trip of archived campaigns, evidence contents, status history and settings; idempotent imports, schedule-consent reset, pre-write validation, and evidence-hash integrity.
-- Offline web bundle validation and UI behaviors, including campaign search, evidence/history filtering, invalid import handling, and clearing the local view.
+- Offline web bundle validation and UI behaviors, including campaign search, evidence/history filtering, invalid import handling, and clear/replacement discard confirmation paths.
+- Offline companion edit/draft/export safeguards: imported objects and evidence hashes remain unchanged; drafts use collision-safe IDs, null policy assertions, no added evidence, Unverified status, a desktop-review warning and a history event; generated working-copy output validates as a separate bundle.
+- Offline web campaign, evidence, and history tables expose accessible names and column-header scope; horizontally scrollable table regions are keyboard-focusable.
 - Offline PWA registration is limited to secure HTTPS or localhost origins; service-worker tests verify that only same-origin allow-listed static GET assets are cached/served, and the manifest/icon files exist. Imported bundle data is never included in the app-shell cache.
 - Advisory AI prompt/data handling and explicit MCP tool consent/dispatch.
 - Encrypted storage, including asynchronous OS-storage operations and errors for unreadable encrypted state.
@@ -41,9 +45,16 @@ The commands were run sequentially with `PG_SMOKE=1`, first at 390px and then at
 
 - The preload bridge exists while renderer Node access is unavailable.
 - All eight navigation views resolve correctly and have no horizontal overflow.
-- Mobile navigation opens and closes at the narrow width.
+- A scan of visible, enabled controls across all eight views found no unlabeled interactive controls.
+- Navigation exposes its active item and moves keyboard focus to the selected view heading.
+- Mobile navigation opens with focus in the menu, closes on Escape and restores focus to its toggle, and moves focus to the selected view heading.
+- Campaign results expose a named list with list items; search and status/archive filtering announce matching record counts and empty results through a polite live region.
+- Overview campaign totals are exposed as a named list with four metric items.
+- Analytics canvases have accessible names/descriptions and expandable data tables with row/column headers; smoke checks verify populated chart data against a local campaign fixture.
 - Campaign add, duplicate detection, review transitions, separate source attestation, and domain validation.
-- Terms snapshot save/hash and preflight loading the matching persisted snapshot rather than renderer-supplied terms.
+- Campaign editing through the accessible dialog, including saving fields and clearing optional values.
+- Activity notifications, alerts, and receipt records are exposed as named lists; dismissing a notification announces the action without making the whole list a live region.
+- Terms snapshot save/hash, labeled review-form controls and revision-comparison selectors, announced comparison results with accessible added/removed line labels, and preflight loading the matching persisted snapshot rather than renderer-supplied terms.
 - Analytics view navigation plus working flags/activity queries; archived records are available through the archive-inclusive API.
 - Unsafe feed/manifest URLs and invalid WalletConnect project IDs are rejected.
 - Unconnected wallet refresh is rejected; no signing, approval, or transaction-send API is exposed.
@@ -72,7 +83,7 @@ The stale installer packages in the repository were removed; locked unpacked app
 
 ## Browser preview and the Electron message
 
-Opening `renderer/index.html` directly is a static browser preview. It intentionally has no Electron preload bridge, database, wallet, feed, or AI access. The standalone `web/index.html` is a source-only local companion for importing the read-only export bundle; it is not included in the Windows installer and has no account, sync, or network API. Its PWA install/offline-cache mode requires HTTPS or localhost; `file://` remains usable for direct bundle imports but cannot install or use the service worker. Mobile browser installation and offline acceptance have not been tested on physical devices.
+Opening `renderer/index.html` directly is a static browser preview. It intentionally has no Electron preload bridge, database, wallet, feed, or AI access. The standalone `web/index.html` is a source-only local companion for importing, editing a separate in-memory copy, creating local Unverified drafts, and exporting a new working-copy bundle; it is not included in the Windows installer and has no account, sync, or API connection. Its PWA install/offline-cache mode requires HTTPS or localhost; the service worker caches only the static shell, never imported or edited bundle data. `file://` remains usable for bundle import/edit/draft/export but cannot install or use the service worker. Mobile browser installation and offline acceptance have not been tested on physical devices.
 
 For the full app, double-click `Start PromoGuard.bat` or run `npm start` from the project folder. Do not use the HTML preview as a substitute.
 
