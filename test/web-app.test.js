@@ -34,10 +34,12 @@ class Element {
   showModal() { this.open = true; }
   close() { this.open = false; this.listeners.close?.(); }
   focus() { this.document.activeElement = this; }
+  reset() {}
+  remove() { this.removed = true; }
 }
 
 test('campaign search and filter scope local records and invalid bundles preserve the current view', () => {
-  const ids = ['bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns', 'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus', 'evidence', 'history', 'clearBundle', 'campaignEditor', 'campaignEditorForm', 'cancelEdit', 'exportBundle', 'draftStatus', 'editorStatus'];
+  const ids = ['bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns', 'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus', 'evidence', 'history', 'clearBundle', 'campaignEditor', 'campaignEditorForm', 'cancelEdit', 'exportBundle', 'draftStatus', 'editorStatus', 'addDraftCampaign', 'draftCampaignDialog', 'draftCampaignForm', 'draftCampaignStatus', 'cancelDraftCampaign', 'discardChangesDialog', 'discardChangesMessage', 'keepLocalEdits', 'confirmDiscardLocalEdits'];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const document = {
     getElementById: id => elements[id],
@@ -155,14 +157,21 @@ test('offline editing changes only an in-memory copy and exports a separate unve
     'bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns',
     'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus',
     'evidence', 'history', 'clearBundle', 'campaignEditor', 'campaignEditorForm',
-    'exportBundle', 'draftStatus', 'cancelEdit', 'editorStatus'
+    'exportBundle', 'draftStatus', 'cancelEdit', 'editorStatus', 'addDraftCampaign',
+    'draftCampaignDialog', 'draftCampaignForm', 'draftCampaignStatus', 'cancelDraftCampaign',
+    'discardChangesDialog', 'discardChangesMessage', 'keepLocalEdits', 'confirmDiscardLocalEdits'
   ];
   const document = { downloads: [], activeElement: null };
+  document.body = new Element('body', document);
   const elements = Object.fromEntries(ids.map(id => [id, new Element('', document)]));
   const fields = ['name', 'publisher', 'network', 'tokenId', 'rewardAmount', 'endDate', 'archived'];
   const controls = Object.fromEntries(fields.map(name => [name, new Element('input', document)]));
   elements.campaignEditorForm.elements = { namedItem: name => controls[name] };
+  const draftFields = ['name', 'publisher', 'network', 'tokenId', 'rewardAmount', 'endDate'];
+  const draftControls = Object.fromEntries(draftFields.map(name => [name, new Element('input', document)]));
+  elements.draftCampaignForm.elements = { namedItem: name => draftControls[name] };
   const blobs = [];
+  const parsedFiles = [];
   let revoked = null;
   document.getElementById = id => elements[id];
   document.createElement = tag => new Element(tag, document);
@@ -178,12 +187,18 @@ test('offline editing changes only an in-memory copy and exports a separate unve
     setTimeout(callback) { callback(); },
     PromoGuardBundle: {
       ...api,
-      parseFile: (_file, callback) => callback(null, imported)
+      parseFile: (file, callback) => {
+        parsedFiles.push(file);
+        callback(file.error || null, file.data || imported);
+      }
     }
   };
   class FormDataMock {
     constructor(form) { this.form = form; }
-    get(name) { return name === 'archived' ? (controls.archived.checked ? 'on' : null) : controls[name].value; }
+    get(name) {
+      if (name === 'archived') return controls.archived.checked ? 'on' : null;
+      return this.form.elements.namedItem(name).value;
+    }
   }
   class BlobMock {
     constructor(parts, options) { this.parts = parts; this.options = options; }
@@ -250,7 +265,7 @@ test('offline editing changes only an in-memory copy and exports a separate unve
 
   elements.exportBundle.click();
   assert.equal(document.downloads.length, 1);
-  assert.equal(document.downloads[0].download, 'promoguard-offline-edited-bundle.json');
+  assert.equal(document.downloads[0].download, 'promoguard-offline-working-copy.json');
   assert.equal(revoked, 'blob:local-export');
   assert.equal(window.navigator.serviceWorker, undefined);
   assert.equal(window.networkRequests, undefined);
@@ -261,8 +276,80 @@ test('offline editing changes only an in-memory copy and exports a separate unve
     assert.equal(exported.resources.campaigns[0].rewardAmount, 0);
     assert.equal(exported.resources.campaigns[0].archived, true);
     assert.equal(exported.resources.evidence[0].contentHash, 'c'.repeat(64));
+    elements.addDraftCampaign.click();
+    assert.equal(elements.draftCampaignDialog.open, true);
+    draftControls.name.value = 'New local draft';
+    draftControls.publisher.value = 'Unverified publisher';
+    draftControls.network.value = '';
+    draftControls.tokenId.value = '';
+    draftControls.rewardAmount.value = '';
+    draftControls.endDate.value = '';
+    elements.draftCampaignForm.dispatchEvent({ type: 'submit', preventDefault() {} });
+    assert.equal(elements.draftCampaignDialog.open, false);
+    assert.equal(imported.resources.campaigns.length, 1);
+    assert.equal(imported.resources.evidence[0].contentHash, 'c'.repeat(64));
+    assert.match(elements.draftStatus.textContent, /desktop review is required/i);
+    assert.equal(elements.exportBundle.disabled, false);
+    elements.exportBundle.click();
+    return blobs[1].text();
+  }).then(output => {
+    const exported = api.validateBundle(output);
+    const draft = exported.resources.campaigns.find(item => item.name === 'New local draft');
+    assert.ok(draft);
+    assert.equal(draft.status, 'UNVERIFIED');
+    assert.equal(draft.archived, false);
+    assert.ok(Object.keys(draft).filter(key => key.startsWith('requires') || ['requestsSeedPhrase', 'unclearSignature', 'unverifiedSite'].includes(key))
+      .every(key => draft[key] === null));
+    assert.equal(exported.resources.evidence.length, 1);
+    assert.equal(exported.resources.evidence[0].contentHash, 'c'.repeat(64));
+    assert.match(exported.resources.statusHistory.find(entry => entry.campaignId === draft.id).reason, /desktop review required/i);
+
+    const replacement = JSON.parse(JSON.stringify(imported));
+    replacement.resources.campaigns[0].name = 'Replacement bundle campaign';
+    elements.bundleFile.files = [{ name: 'replacement.json', data: replacement }];
+    elements.bundleFile.listeners.change();
+    assert.equal(elements.discardChangesDialog.open, true);
+    assert.equal(parsedFiles.length, 1);
+    elements.keepLocalEdits.click();
+    assert.equal(parsedFiles.length, 1);
+    assert.equal(elements.exportBundle.disabled, false);
+    assert.ok(elements.campaigns.children[0].children[0].children.some(row => row.children?.[0]?.textContent === 'New local draft'));
+    elements.bundleFile.files = [{ name: 'invalid.json', error: new Error('Rejected replacement') }];
+    elements.bundleFile.listeners.change();
+    assert.equal(elements.discardChangesDialog.open, true);
+    elements.confirmDiscardLocalEdits.click();
+    assert.equal(parsedFiles.length, 2);
+    assert.equal(elements.importStatus.textContent, 'Rejected replacement');
+    assert.equal(elements.exportBundle.disabled, false);
+    assert.ok(elements.campaigns.children[0].children[0].children.some(row => row.children?.[0]?.textContent === 'New local draft'));
+    elements.bundleFile.files = [{ name: 'replacement.json', data: replacement }];
+    elements.bundleFile.listeners.change();
+    assert.equal(parsedFiles.length, 2);
+    elements.confirmDiscardLocalEdits.click();
+    assert.equal(parsedFiles.length, 3);
+    assert.equal(elements.exportBundle.disabled, true);
+    assert.equal(elements.campaigns.children[0].children[0].children[1].children[0].textContent, 'Replacement bundle campaign');
+
+    elements.addDraftCampaign.click();
+    draftControls.name.value = 'Clear confirmation draft';
+    elements.draftCampaignForm.dispatchEvent({ type: 'submit', preventDefault() {} });
     elements.clearBundle.click();
+    assert.equal(elements.discardChangesDialog.open, true);
+    elements.keepLocalEdits.click();
+    assert.equal(elements.exportBundle.disabled, false);
+    assert.ok(elements.campaigns.children[0].children[0].children.some(row => row.children?.[0]?.textContent === 'Clear confirmation draft'));
+    elements.clearBundle.click();
+    assert.equal(elements.discardChangesDialog.open, true);
+    elements.confirmDiscardLocalEdits.click();
+    assert.deepEqual(imported.resources.campaigns.map(item => item.name), ['Original name']);
     assert.equal(elements.exportBundle.disabled, true);
     assert.equal(elements.campaignEditor.open, false);
   });
+});
+
+test('offline companion blocks API connections and does not use browser persistence', () => {
+  const html = fs.readFileSync(path.join(root, 'web', 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(root, 'web', 'app.js'), 'utf8');
+  assert.match(html, /connect-src 'none'/);
+  assert.doesNotMatch(app, /\b(?:localStorage|sessionStorage|indexedDB|fetch|XMLHttpRequest|WebSocket)\b/);
 });

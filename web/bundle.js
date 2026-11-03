@@ -128,6 +128,69 @@
     return validateBundle(bundle);
   }
 
+  function createdDraftBundle(input, draft, createdAt) {
+    const bundle = cloneBundle(input);
+    const fields = ['name', 'publisher', 'network', 'tokenId', 'rewardAmount', 'endDate'];
+    if (!draft || typeof draft !== 'object' || Array.isArray(draft) || !hasExactFields(draft, fields) ||
+        typeof createdAt !== 'string' || !Number.isFinite(Date.parse(createdAt)) ||
+        new Date(createdAt).toISOString() !== createdAt) invalidBundle();
+
+    const stringFields = { publisher: 200, network: 80, tokenId: 256, endDate: 32 };
+    if (typeof draft.name !== 'string' || !draft.name.trim() || draft.name.trim().length > 200) invalidBundle();
+    for (const [field, maxLength] of Object.entries(stringFields)) {
+      if (draft[field] !== null &&
+          (typeof draft[field] !== 'string' || draft[field].length > maxLength)) invalidBundle();
+    }
+    if (draft.endDate !== null) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(draft.endDate);
+      if (!match) invalidBundle();
+      const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+      if (date.toISOString().slice(0, 10) !== draft.endDate) invalidBundle();
+    }
+    if (draft.rewardAmount !== null &&
+        (typeof draft.rewardAmount !== 'number' || !Number.isFinite(draft.rewardAmount) || draft.rewardAmount < 0)) invalidBundle();
+
+    const nextUnusedId = usedIds => {
+      let candidate = 1;
+      while (usedIds.has(candidate)) {
+        if (candidate === Number.MAX_SAFE_INTEGER) invalidBundle();
+        candidate += 1;
+      }
+      return candidate;
+    };
+    const campaignIds = new Set(bundle.resources.campaigns.map(campaign => campaign.id));
+    const campaignId = nextUnusedId(campaignIds);
+    const historyId = nextUnusedId(new Set(bundle.resources.statusHistory.map(event => event.id)));
+    const warning = 'Created in offline companion; desktop review required. This draft is not evidence of eligibility or payment.';
+    const campaign = {
+      id: campaignId,
+      name: draft.name.trim(),
+      publisher: draft.publisher?.trim() || null,
+      sourceUrl: null,
+      network: draft.network?.trim() || null,
+      tokenId: draft.tokenId?.trim() || null,
+      rewardAmount: draft.rewardAmount,
+      endDate: draft.endDate,
+      status: 'UNVERIFIED',
+      reasons: [warning],
+      evidenceUrl: null,
+      lastChecked: null,
+      archived: false,
+      reviewNote: 'Draft created locally; review in PromoGuard desktop before relying on any campaign details.',
+      ...Object.fromEntries(requiredFlags.map(flag => [flag, null]))
+    };
+    bundle.resources.campaigns.push(campaign);
+    bundle.resources.statusHistory.push({
+      id: historyId,
+      campaignId,
+      fromStatus: null,
+      toStatus: 'UNVERIFIED',
+      reason: warning,
+      occurredAt: createdAt
+    });
+    return validateBundle(bundle);
+  }
+
   function parseFile(file, callback) {
     if (!file || file.size > MAX_BUNDLE_BYTES) {
       callback(new Error(`Choose a JSON bundle no larger than ${MAX_BUNDLE_BYTES / 1024 / 1024} MB.`));
@@ -142,7 +205,7 @@
     reader.readAsText(file);
   }
 
-  const api = Object.freeze({ MAX_BUNDLE_BYTES, validateBundle, cloneBundle, editedBundle, parseFile });
+  const api = Object.freeze({ MAX_BUNDLE_BYTES, validateBundle, cloneBundle, editedBundle, createdDraftBundle, parseFile });
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.PromoGuardBundle = api;
 })(typeof globalThis === 'undefined' ? this : globalThis);

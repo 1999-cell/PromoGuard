@@ -21,6 +21,7 @@ The actual package version is `0.1.0`. The older implementation plan/PDFs contai
 - **Wallet access:** optional, read-only and consent-gated. No seed phrase/private key/password entry is required or supported.
 - **Eligibility language:** local evidence and deterministic rules only. “Eligible for review” is not proof of source legitimacy, final eligibility or payment.
 - **Browser preview:** `renderer/index.html` may show static navigation and a clear notice. It cannot access Electron's isolated preload/database/wallet services. Do not weaken the security boundary to make `file://` behave like the desktop app.
+- **Offline companion:** `web/index.html` imports a user-selected bundle, permits limited in-memory edits and local Unverified draft creation, and downloads a separate working-copy bundle. Draft policy assertions are null and drafts contain no evidence; edits/drafts cannot set eligibility/payment statuses. The source import is not mutated, and modified work requires confirmation before replacement or clearing. It does not persist/import-cache data or call APIs.
 
 ## Application map
 
@@ -34,6 +35,7 @@ The actual package version is `0.1.0`. The older implementation plan/PDFs contai
 | Wallet Center | TON Connect and WalletConnect/EVM connection and public-data panels; separate consent, network checks and local erasure | Pairing, live RPC data and provider terms require testnet/owner verification; EVM token discovery/history is not complete |
 | Activity | Local counters, persisted notifications, alerts and preflight records | No external-service health monitoring; balance changes do not prove a reward |
 | Settings & AI | Reward threshold, domain allow-list, feed/schedule settings, provider configuration, local Ollama AI and consent-gated MCP | AI is advisory only; Ollama must be installed/configured; no cloud AI or independent content verification |
+| Offline web companion | Local bundle import, search/filter, limited in-memory edits and new-bundle download | Source-only viewer companion; imports are never mutated or cached; edits reset status to Unverified and preserve all evidence hashes |
 
 ## Defects found and work completed
 
@@ -54,6 +56,7 @@ The actual package version is `0.1.0`. The older implementation plan/PDFs contai
 | Electron 45 deprecated synchronous safeStorage calls | Runtime emitted a deprecation warning and future compatibility risk existed | Switched session/config storage to async safeStorage methods; test coverage added |
 | Windows builder config had an invalid signing option and archive extraction could hit a locked rename | Packaging failed | Corrected the Windows config and configured `electronDist` to use the installed Electron distribution; verified a fresh NSIS output |
 | Existing browser tab retained an old renderer resource | Users repeatedly saw a stale Electron-required message | Root cause confirmed as stale cached JS; the current versioned assets render the static preview notice, not the old error |
+| Offline companion needed user-controlled corrections and drafts without changing the source bundle | Read-only view did not let users prepare corrected or new campaign records for desktop re-import | Added allow-listed in-memory edits, conservative local drafts, discard confirmation and a validated new-bundle download; changed/new records become Unverified, draft policy flags remain unknown, history is appended, and evidence/hashes are immutable |
 | Closing the launching terminal could make Electron's main-process error logging write to a closed stdout/stderr pipe | A logging `EPIPE` could trigger a JavaScript error dialog even when the underlying IPC error was handled | Added a narrow output-stream guard that ignores only `EPIPE`; other stream errors remain visible. Regression tests cover both cases. |
 
 No wallet signing, transfers, claim execution, made-up market data, or real-money prediction functionality was introduced.
@@ -119,4 +122,4 @@ There is no honest completion percentage or earnings forecast to report from thi
 
 ## Verification snapshot
 
-See [TEST_REPORT.md](./TEST_REPORT.md) for the full command/results table and [API_AND_DATA_SOURCES.md](./API_AND_DATA_SOURCES.md) for provider prerequisites. At the latest local test run on 2026-11-03, 164 automated tests passed; all 57 project JavaScript files passed syntax checks, Electron smoke checks at 390px and 1180px returned `failed:[]`, the local web companion and secure-origin PWA behavior were exercised with local fixtures, and a current Windows NSIS package build succeeded. Real providers, a clean installer install/upgrade/uninstall, physical-device PWA installation, a public launch, and production readiness remain unverified. The initial public-repository upload includes the current source, tests, and project docs; local credentials/configuration, the personal wallet note, unrelated analytics files, dependencies, and generated build output are excluded.
+See [TEST_REPORT.md](./TEST_REPORT.md) for the full command/results table and [API_AND_DATA_SOURCES.md](./API_AND_DATA_SOURCES.md) for provider prerequisites. The current local test run passes all 170 automated tests; focused offline-companion tests pass 14/14, the current 1180px Electron smoke returned `failed:[]`, and existing 390px smoke and NSIS build results remain recorded. The local web companion and secure-origin PWA behavior are exercised with local fixtures. Real providers, a clean installer install/upgrade/uninstall, physical-device PWA installation, a public launch, and production readiness remain unverified. The initial public-repository upload includes the current source, tests, and project docs; local credentials/configuration, the personal wallet note, unrelated analytics files, dependencies, and generated build output are excluded.

@@ -26,7 +26,9 @@ function runApp({ protocol, hostname, isSecureContext, register }) {
     'bundleFile', 'importStatus', 'offlineStatus', 'summary', 'campaigns',
     'campaignSearch', 'campaignSearchStatus', 'campaignFilter', 'filterStatus',
     'evidence', 'history', 'clearBundle', 'campaignEditor', 'campaignEditorForm',
-    'cancelEdit', 'exportBundle', 'draftStatus', 'editorStatus'
+    'cancelEdit', 'exportBundle', 'draftStatus', 'editorStatus', 'addDraftCampaign',
+    'draftCampaignDialog', 'draftCampaignForm', 'draftCampaignStatus', 'cancelDraftCampaign',
+    'discardChangesDialog', 'discardChangesMessage', 'keepLocalEdits', 'confirmDiscardLocalEdits'
   ];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const document = {
@@ -57,7 +59,7 @@ function runApp({ protocol, hostname, isSecureContext, register }) {
 
 function loadWorker({ fetchImpl = async () => ({ ok: true, type: 'basic', clone() { return this; } }) } = {}) {
   const handlers = {};
-  const cacheCalls = { added: [], matched: [], put: [] };
+  const cacheCalls = { added: [], matched: [], put: [], opened: [] };
   const cachedResponse = { source: 'cache' };
   const cache = {
     async addAll(assets) { cacheCalls.added.push(...assets); },
@@ -75,7 +77,7 @@ function loadWorker({ fetchImpl = async () => ({ ok: true, type: 'basic', clone(
     skipWaiting: async () => {}
   };
   const caches = {
-    open: async () => cache,
+    open: async name => { cacheCalls.opened.push(name); return cache; },
     keys: async () => ['promoguard-offline-old', 'unrelated-cache'],
     delete: async () => true
   };
@@ -112,6 +114,7 @@ test('service worker caches only the static app shell and only serves same-origi
   let installWait;
   worker.handlers.install({ waitUntil: promise => { installWait = promise; } });
   await installWait;
+  assert.ok(worker.cacheCalls.opened.includes('promoguard-offline-v3'));
   assert.deepEqual(worker.cacheCalls.added, [
     './', './index.html', './style.css', './bundle.js', './app.js',
     './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { validateBundle, MAX_BUNDLE_BYTES } = require('../web/bundle');
+const { validateBundle, MAX_BUNDLE_BYTES, createdDraftBundle } = require('../web/bundle');
 
 const campaign = {
   id: 1,
@@ -104,4 +104,71 @@ test('offline edit API cannot set status, payment assertions, evidence, hashes, 
   ]) {
     assert.throws(() => editedBundle(imported, 1, changes, '2026-11-03T01:00:00.000Z'));
   }
+});
+
+test('local draft creation validates fields, allocates collision-free IDs, and keeps policy/evidence conservative', () => {
+  const imported = fixture();
+  imported.resources.campaigns.push({ ...campaign, id: 2, name: 'Existing second campaign' });
+  imported.resources.evidence.push({
+    id: 1, campaignId: 1, url: 'https://example.test/terms', fetchedAt: '2026-11-03T00:00:00.000Z',
+    contentHash: 'd'.repeat(64), note: 'existing evidence', content: 'unchanged'
+  });
+  imported.resources.statusHistory.push({
+    id: 1, campaignId: 1, fromStatus: null, toStatus: 'UNVERIFIED',
+    reason: 'Existing history', occurredAt: '2026-11-03T00:00:00.000Z'
+  });
+  const before = JSON.parse(JSON.stringify(imported));
+  const createdAt = '2026-11-03T02:00:00.000Z';
+  const result = createdDraftBundle(imported, {
+    name: '  Local draft  ', publisher: 'Publisher', network: 'testnet',
+    tokenId: null, rewardAmount: 0, endDate: '2027-01-31'
+  }, createdAt);
+  const draft = result.resources.campaigns.find(item => item.id === 3);
+
+  assert.deepEqual(imported, before);
+  assert.ok(draft);
+  assert.equal(draft.name, 'Local draft');
+  assert.equal(draft.status, 'UNVERIFIED');
+  assert.equal(draft.archived, false);
+  assert.equal(draft.sourceUrl, null);
+  assert.equal(draft.evidenceUrl, null);
+  assert.equal(draft.lastChecked, null);
+  assert.ok(Object.keys(draft).filter(key => key.startsWith('requires') || key === 'requestsSeedPhrase' || key === 'unclearSignature' || key === 'unverifiedSite')
+    .every(key => draft[key] === null));
+  assert.deepEqual(result.resources.evidence, before.resources.evidence);
+  assert.deepEqual(result.resources.statusHistory.at(-1), {
+    id: 2, campaignId: 3, fromStatus: null, toStatus: 'UNVERIFIED',
+    reason: 'Created in offline companion; desktop review required. This draft is not evidence of eligibility or payment.',
+    occurredAt: createdAt
+  });
+  assert.match(draft.reasons[0], /desktop review required/i);
+  assert.match(draft.reviewNote, /review in PromoGuard desktop/i);
+  assert.deepEqual(validateBundle(JSON.stringify(result)), result);
+});
+
+test('local draft creation rejects invalid and trust-asserting inputs without changing the source bundle', () => {
+  const { createdDraftBundle } = require('../web/bundle');
+  const imported = fixture();
+  const original = JSON.parse(JSON.stringify(imported));
+  const validDraft = {
+    name: 'New campaign', publisher: null, network: null, tokenId: null, rewardAmount: null, endDate: null
+  };
+  const invalidDrafts = [
+    { ...validDraft, name: '   ' },
+    { ...validDraft, name: 'x'.repeat(201) },
+    { ...validDraft, rewardAmount: -1 },
+    { ...validDraft, rewardAmount: Infinity },
+    { ...validDraft, rewardAmount: '5' },
+    { ...validDraft, endDate: '2026-02-31' },
+    { ...validDraft, endDate: 'not-a-date' },
+    { ...validDraft, requiresGas: false },
+    { ...validDraft, status: 'REWARD_RECEIVED' },
+    { ...validDraft, evidence: [{ contentHash: '0'.repeat(64) }] }
+  ];
+  for (const draft of invalidDrafts) {
+    assert.throws(() => createdDraftBundle(imported, draft, '2026-11-03T02:00:00.000Z'));
+    assert.deepEqual(imported, original);
+  }
+  assert.throws(() => createdDraftBundle(imported, validDraft, 'not-a-timestamp'));
+  assert.deepEqual(imported, original);
 });

@@ -27,7 +27,8 @@
       <p id="offlineStatus" class="empty" role="status" aria-live="polite">Installable offline mode requires HTTPS or localhost. Direct file import remains available.</p>
       <div id="summary"></div>
       <p id="draftStatus" role="status" aria-live="polite">Edits are unavailable until a bundle is imported.</p>
-      <button id="exportBundle" type="button" disabled>Export edited bundle</button>
+      <button id="addDraftCampaign" type="button" disabled>Add local draft campaign</button>
+      <button id="exportBundle" type="button" disabled>Export working copy</button>
       <button id="clearBundle" type="button">Clear local view</button>
     </section>
     <section class="panel" aria-labelledby="campaign-title">
@@ -70,6 +71,33 @@
         <button type="submit">Save to working copy</button>
         <button id="cancelEdit" type="button">Cancel</button>
       </form>
+    </dialog>
+    <dialog id="draftCampaignDialog" aria-labelledby="draftCampaignTitle">
+      <form id="draftCampaignForm">
+        <h2 id="draftCampaignTitle">Add local draft campaign</h2>
+        <p>Drafts are unverified, contain no evidence, and require review in PromoGuard desktop. Policy assertions remain unknown.</p>
+        <label for="draftName">Campaign name</label>
+        <input id="draftName" name="name" maxlength="200" required>
+        <label for="draftPublisher">Publisher</label>
+        <input id="draftPublisher" name="publisher" maxlength="200">
+        <label for="draftNetwork">Network</label>
+        <input id="draftNetwork" name="network" maxlength="80">
+        <label for="draftTokenId">Token ID</label>
+        <input id="draftTokenId" name="tokenId" maxlength="256">
+        <label for="draftRewardAmount">Published reward amount (optional)</label>
+        <input id="draftRewardAmount" name="rewardAmount" type="number" min="0" step="any">
+        <label for="draftEndDate">End date</label>
+        <input id="draftEndDate" name="endDate" type="date">
+        <p id="draftCampaignStatus" role="status" aria-live="polite"></p>
+        <button type="submit">Add unverified draft</button>
+        <button id="cancelDraftCampaign" type="button">Cancel</button>
+      </form>
+    </dialog>
+    <dialog id="discardChangesDialog" aria-labelledby="discardChangesTitle" aria-describedby="discardChangesMessage">
+      <h2 id="discardChangesTitle">Discard local edits?</h2>
+      <p id="discardChangesMessage">Your working copy has edits that have not been exported. Discard them?</p>
+      <button id="keepLocalEdits" type="button">Keep editing</button>
+      <button id="confirmDiscardLocalEdits" type="button">Discard edits</button>
     </dialog>
     <script src="bundle.js"></script>
   <script src="app.js"></script>

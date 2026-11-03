@@ -24,7 +24,7 @@ The application does not trade, sign, approve, send transactions, submit claims,
 | Predictions (Paper) | Inactive placeholder; no live odds, money, prizes, points or payouts |
 | Windows packaging | NSIS build configured and verified in an alternate output directory; unsigned and not installed on a clean profile |
 | Backup/restore | Implemented: JSON export/import includes archived campaigns, evidence revisions, status history, and validated app settings; scheduled-fetch consent is reset |
-| Offline web companion | Implemented as a source-only local bundle companion with search, evidence/history filtering, limited in-memory edits and new-bundle export; edits reset status to Unverified and preserve evidence/hashes; imported data is not persisted or cached; PWA shell requires HTTPS/localhost |
+| Offline web companion | Implemented as a source-only local bundle companion with search, evidence/history filtering, limited in-memory edits, local Unverified draft creation and new-bundle export; drafts have null policy flags/no evidence and require desktop review; modified working copies require discard confirmation; imported data is not persisted or cached; PWA shell requires HTTPS/localhost |
 
 ## Fixes completed in this audit
 
@@ -45,6 +45,8 @@ The application does not trade, sign, approve, send transactions, submit claims,
 - Grouped Overview campaign counts as a named list of four metrics for assistive technology.
 - Added descriptive text alternatives and expandable, header-labeled data tables for each Analytics chart.
 - Added offline web editing for descriptive campaign fields and archive state in a separate in-memory copy; export creates a new bundle, preserves the import and evidence hashes, and forces edited campaign status to Unverified.
+- Added local draft campaigns to the offline companion with collision-safe IDs, unknown policy assertions, no evidence, a desktop-review warning and a status-history event; drafts export only as part of a separate validated working-copy bundle.
+- Added an accessible confirmation before clearing or replacing a modified offline working copy; cancelling preserves edits and replacement files are validated before the prompt.
 - Added an Electron acceptance scan requiring accessible names on all visible, enabled form controls and buttons across the eight views.
 - Replaced chained browser prompts for campaign edits with a labeled, keyboard-friendly dialog; edits can clear optional values and return the campaign to review.
 - Exposed Activity notifications, alerts, and receipt records as named lists, with a separate polite announcement when a notification is dismissed; Activity data refreshes when revisiting its view.
@@ -58,9 +60,10 @@ The application does not trade, sign, approve, send transactions, submit claims,
 
 See [TEST_REPORT.md](./TEST_REPORT.md) for exact commands and results. The latest recorded checks are:
 
-- `npm test`: 164 passed, 0 failed, including DNS policy/pinning, redirect validation, backup round-trip/invalid-input, offline web UI, and secure-origin PWA coverage.
+- `npm test`: 170 passed, 0 failed after local-draft and unsaved-change-confirmation coverage.
+- Focused offline companion tests: 14 passed, 0 failed; web app and bundle JavaScript syntax checks and `git diff --check` passed.
 - JavaScript syntax checks: all 57 project JavaScript files passed; local tooling, dependency, and generated build folders were excluded.
-- Electron smoke checks at 390px and 1180px: exited 0 with `failed:[]`.
+- Electron smoke checks at 390px (previous recorded run) and 1180px (current run): exited 0 with `failed:[]`.
 - Direct local web preview: synthetic bundle import, campaign search, and evidence/history filtering passed.
 - Current Windows NSIS packaging build: succeeded to a temporary directory; package is unsigned and has no configured author or app icon.
 - Dependency audit: the last recorded `npm audit` and production-only audit reported zero advisories on 2026-10-26; they were not rerun in this audit.
